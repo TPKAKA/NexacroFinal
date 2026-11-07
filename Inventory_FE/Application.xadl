@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ADL version="2.0"><Application id="Application" screenid="Desktop_screen"><Layout><MainFrame id="mainframe" width="1440" height="960" titletext="KANBAN | Inventory Management" showtitlebar="true"><ChildFrame id="childframe" formurl="forms::Login.xfdl" showtitlebar="false"/></MainFrame></Layout><Style url="xcssrc::inventory.xcss"/><Script type="xscript5.1"><![CDATA[]]></Script></Application></ADL>

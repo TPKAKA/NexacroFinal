@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1"><Form id="SignUp" width="1440" height="960" titletext="SignUp" onload="onLoad">
+<Layouts><Layout width="1440" height="960">
+<Static id="staAuthCanvas" left="0" top="0" width="1440" height="960" text="" cssclass="authCanvas"/>
+<Static id="staLogoMark" left="320" top="355" width="150" height="160" text="K" cssclass="authLogoMark"/>
+<Static id="staBrandLarge" left="270" top="520" width="280" height="65" text="KANBAN" cssclass="authBrand"/>
+<Static id="staSmallMark" left="993" top="254" width="48" height="51" text="K" cssclass="smallLogo"/>
+<Static id="staTitle" left="825" top="325" width="440" height="55" text="Create an account" cssclass="authTitle"/>
+<Static id="staHint" left="825" top="376" width="440" height="28" text="Start your 30-day free trial." cssclass="muted"/>
+<Static id="staName" left="825" top="425" width="360" height="23" text="Name*" cssclass="fieldLabel"/>
+<Edit id="edtName" left="825" top="453" width="360" height="45" cssclass="field" password="false" displaynulltext="Enter name"/>
+<Static id="staEmail" left="825" top="510" width="360" height="23" text="Email*" cssclass="fieldLabel"/>
+<Edit id="edtEmail" left="825" top="538" width="360" height="45" cssclass="field" password="false" displaynulltext="Enter email"/>
+<Static id="staPassword" left="825" top="595" width="360" height="23" text="Password*" cssclass="fieldLabel"/>
+<Edit id="edtPassword" left="825" top="623" width="360" height="45" cssclass="field" password="true" displaynulltext="Enter password"/>
+<Static id="staConfirm" left="825" top="710" width="360" height="23" text="Confirm password*" cssclass="fieldLabel"/>
+<Edit id="edtConfirm" left="825" top="738" width="360" height="45" cssclass="field" password="true" displaynulltext="Enter confirm password"/>
+<Static id="staPasswordHelp" left="825" top="671" width="360" height="18" text="Must be at least 8 characters." cssclass="hint"/>
+<Button id="btnCreate" left="825" top="810" width="360" height="46" text="Get started" cssclass="primary" onclick="onCreate"/>
+<Static id="staBackHint" left="888" top="869" width="230" height="25" text="Already have an account?" cssclass="muted"/>
+<Button id="btnBack" left="1095" top="869" width="85" height="25" text="Log in" cssclass="link" onclick="onBack"/>
+</Layout></Layouts>
+<Objects></Objects>
+<Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
+
+this.onLoad = function() {};
+this.onCreate = function() {
+  var name = this.edtName.value, email = this.edtEmail.value;
+  var password = this.edtPassword.value, confirm = this.edtConfirm.value;
+  if (this.gfnEmpty(name)) return this.gfnMessage("Name is required.");
+  if (!this.gfnEmail(email)) return this.gfnMessage("Enter a valid email address.");
+  if (this.gfnEmpty(password) || password.length < 8) return this.gfnMessage("Password must have at least 8 characters.");
+  if (password != confirm) return this.gfnMessage("Passwords do not match.");
+  this.gfnMessage("Account creation requires the authentication API. The frontend validation is ready.");
+};
+this.onBack = function() { this.gfnNavigate("Login"); };
+
+]]></Script></Form></FDL>

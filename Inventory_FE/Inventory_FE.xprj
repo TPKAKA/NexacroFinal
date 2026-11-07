@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project version="2.1" nexacrosdk="Latest Version"><EnvironmentDefinition url="environment.xml"/><TypeDefinition url="typedefinition.xml"/><AppVariables url="appvariables.xml"/><AppInfos><AppInfo url="Application.xadl"/></AppInfos></Project>

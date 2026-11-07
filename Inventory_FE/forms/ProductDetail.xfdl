@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1"><Form id="ProductDetail" width="1440" height="960" titletext="ProductDetail" onload="onLoad">
+<Layouts><Layout width="1440" height="960">
+<Static id="staSidebarBg" left="0" top="0" width="280" height="960" text="" cssclass="sidebar"/>
+<Static id="staTopbarBg" left="280" top="0" width="1160" height="100" text="" cssclass="topbar"/>
+<Static id="staLogoMark" left="36" top="28" width="32" height="42" text="K" cssclass="logoMark"/>
+<Static id="staBrand" left="76" top="31" width="170" height="40" text="KANBAN" cssclass="brand"/>
+<Static id="staBell" left="1330" top="29" width="35" height="42" text="♧" cssclass="topIcon"/>
+<Static id="staAvatar" left="1380" top="30" width="38" height="38" text="●" cssclass="avatar"/>
+<Button id="btnDashboard" left="32" top="135" width="218" height="48" text="⌂  Dashboard" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnInventoryList" left="32" top="202" width="218" height="48" text="▧  Inventory" cssclass="navActive" onclick="onNavInventoryList"/>
+<Button id="btnReports" left="32" top="269" width="218" height="48" text="▥  Reports" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnSupplierList" left="32" top="336" width="218" height="48" text="◎  Suppliers" cssclass="nav" onclick="onNavSupplierList"/>
+<Button id="btnOrders" left="32" top="403" width="218" height="48" text="▤  Orders" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnManageStore" left="32" top="470" width="218" height="48" text="▣  Manage Store" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnSettings" left="32" top="816" width="218" height="48" text="⚙  Settings" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnLogout" left="32" top="882" width="218" height="48" text="⇥  Log Out" cssclass="nav" onclick="onLogout"/>
+<Static id="staSearchPlaceholder" left="318" top="29" width="324" height="42" text="⌕  Search product, supplier, order" cssclass="globalSearchText"/>
+<Static id="staDetailCard" left="312" top="124" width="1096" height="787" text="" cssclass="card"/>
+<Static id="staName" left="330" top="140" width="475" height="42" text="" cssclass="sectionTitle"/>
+<Button id="btnEdit" left="1210" top="141" width="80" height="38" text="✎  Edit" cssclass="secondary" onclick="onEdit"/>
+<Button id="btnDownload" left="1299" top="141" width="93" height="38" text="Download" cssclass="secondary" onclick="onDownload"/>
+<Button id="btnOverview" left="330" top="190" width="138" height="44" text="Overview" cssclass="tabActive" onclick="onTab"/>
+<Button id="btnPurchases" left="477" top="190" width="138" height="44" text="Purchases" cssclass="tab" onclick="onTab"/>
+<Button id="btnAdjustments" left="624" top="190" width="138" height="44" text="Adjustments" cssclass="tab" onclick="onTab"/>
+<Button id="btnHistory" left="771" top="190" width="138" height="44" text="History" cssclass="tab" onclick="onTab"/>
+<Static id="staDetailsTitle" left="354" top="255" width="430" height="32" text="Primary Details" cssclass="sectionTitleSmall"/>
+<Static id="staId" left="354" top="307" width="520" height="32" text="" cssclass="detailBody"/>
+<Static id="staInfo" left="354" top="350" width="545" height="190" text="" cssclass="detailBody"/>
+<Static id="staSupplierTitle" left="354" top="560" width="430" height="35" text="Supplier Details" cssclass="sectionTitleSmall"/>
+<Static id="staSupplier" left="354" top="605" width="580" height="85" text="" cssclass="detailBody"/>
+<Static id="staStockTitle" left="354" top="720" width="430" height="35" text="Stock Locations" cssclass="sectionTitleSmall"/>
+<Static id="staStock" left="354" top="762" width="610" height="95" text="Location data will be available from the API." cssclass="stockTable"/>
+<Static id="staImage" left="1150" top="266" width="170" height="190" text="PRODUCT IMAGE" cssclass="imagePlaceholder"/>
+<Static id="staStatus" left="1040" top="490" width="260" height="35" text="" cssclass="status"/>
+<Static id="staTab" left="980" top="540" width="360" height="90" text="Product overview" cssclass="muted"/>
+<Button id="btnBack" left="330" top="865" width="160" height="35" text="← Back to inventory" cssclass="secondary" onclick="onBack"/>
+</Layout></Layouts>
+<Objects></Objects>
+<Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
+this.onLoad=function(){
+  this.gfnSeed();var id=nexacro.getApplication().selectedProductId,rows=nexacro.getApplication().inventoryProducts,p=null;
+  for(var i=0;i<rows.length;i++)if(rows[i].ProductID==id){p=rows[i];break;}
+  if(!p){this.gfnNavigate("InventoryList");return;}
+  this.staName.set_text(p.ProductName);this.staId.set_text("Product ID: "+p.ProductID+"  •  "+p.Category);
+  this.staStatus.set_text(p.Status || "In stock");
+  this.staInfo.set_text("Buying price: "+p.BuyingPrice+"\nQuantity: "+p.Quantity+" "+p.Unit+"\nThreshold: "+p.Threshold+"\nExpiry date: "+p.ExpiryDate);
+  this.staSupplier.set_text(p.Supplier || "No supplier assigned");
+};
+this.onNavInventoryList=function(){this.gfnNavigate("InventoryList");};
+this.onNavSupplierList=function(){this.gfnNavigate("SupplierList");};
+this.onLogout=function(){this.gfnNavigate("Login");};
+this.onBack=function(){this.gfnNavigate("InventoryList");};
+this.onComingSoon=function(){this.gfnMessage("This section is outside the current requirements.");};
+this.onEdit=function(){this.gfnMessage("Editing will be connected to the product API.");};
+this.onDownload=function(){this.gfnMessage("Download will be connected to the product API.");};
+this.onTab=function(obj){this.staTab.set_text(obj.text+" data will be available from the API.");};
+
+]]></Script></Form></FDL>

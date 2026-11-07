@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1"><Form id="InventoryList" width="1440" height="960" titletext="InventoryList" onload="onLoad">
+<Layouts><Layout width="1440" height="960">
+<Static id="staSidebarBg" left="0" top="0" width="280" height="960" text="" cssclass="sidebar"/>
+<Static id="staTopbarBg" left="280" top="0" width="1160" height="100" text="" cssclass="topbar"/>
+<Static id="staLogoMark" left="36" top="28" width="32" height="42" text="K" cssclass="logoMark"/>
+<Static id="staBrand" left="76" top="31" width="170" height="40" text="KANBAN" cssclass="brand"/>
+<Static id="staBell" left="1330" top="29" width="35" height="42" text="♧" cssclass="topIcon"/>
+<Static id="staAvatar" left="1380" top="30" width="38" height="38" text="●" cssclass="avatar"/>
+<Button id="btnDashboard" left="32" top="135" width="218" height="48" text="⌂  Dashboard" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnInventoryList" left="32" top="202" width="218" height="48" text="▧  Inventory" cssclass="navActive" onclick="onNavInventoryList"/>
+<Button id="btnReports" left="32" top="269" width="218" height="48" text="▥  Reports" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnSupplierList" left="32" top="336" width="218" height="48" text="◎  Suppliers" cssclass="nav" onclick="onNavSupplierList"/>
+<Button id="btnOrders" left="32" top="403" width="218" height="48" text="▤  Orders" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnManageStore" left="32" top="470" width="218" height="48" text="▣  Manage Store" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnSettings" left="32" top="816" width="218" height="48" text="⚙  Settings" cssclass="nav" onclick="onComingSoon"/>
+<Button id="btnLogout" left="32" top="882" width="218" height="48" text="⇥  Log Out" cssclass="nav" onclick="onLogout"/>
+<Edit id="edtSearch" left="318" top="29" width="318" height="42" cssclass="globalSearch" displaynulltext="Search product, supplier, order"/>
+<Button id="btnSearch" left="642" top="29" width="78" height="42" text="Search" cssclass="topSearchButton" onclick="onSearch"/>
+<Static id="staOverallCard" left="312" top="124" width="1096" height="186" text="" cssclass="card"/>
+<Static id="staOverallTitle" left="330" top="140" width="400" height="34" text="Overall Inventory" cssclass="sectionTitle"/>
+<Static id="labstaCategories" left="330" top="195" width="225" height="24" text="Categories" cssclass="metricLabel"/>
+<Static id="staCategories" left="330" top="222" width="135" height="40" text="14" cssclass="metric"/>
+<Static id="notestaCategories" left="330" top="267" width="220" height="22" text="Last 7 days" cssclass="hint"/>
+<Static id="labstaTotal" left="600" top="195" width="225" height="24" text="Total Products" cssclass="metricLabel"/>
+<Static id="staTotal" left="600" top="222" width="135" height="40" text="0" cssclass="metric"/>
+<Static id="notestaTotal" left="600" top="267" width="220" height="22" text="Last 7 days" cssclass="hint"/>
+<Static id="labstaTopSelling" left="870" top="195" width="225" height="24" text="Top Selling" cssclass="metricLabel"/>
+<Static id="staTopSelling" left="870" top="222" width="135" height="40" text="5" cssclass="metric"/>
+<Static id="notestaTopSelling" left="870" top="267" width="220" height="22" text="Last 7 days" cssclass="hint"/>
+<Static id="labstaLow" left="1140" top="195" width="225" height="24" text="Low Stocks" cssclass="metricLabel"/>
+<Static id="staLow" left="1140" top="222" width="135" height="40" text="0" cssclass="metric"/>
+<Static id="notestaLow" left="1140" top="267" width="220" height="22" text="Ordered" cssclass="hint"/>
+<Static id="staOut" left="1300" top="240" width="85" height="28" text="0 out" cssclass="muted"/>
+<Static id="staProductsCard" left="312" top="330" width="1096" height="581" text="" cssclass="card"/>
+<Static id="staProductsTitle" left="330" top="349" width="300" height="37" text="Products" cssclass="sectionTitle"/>
+<Button id="btnAdd" left="1020" top="345" width="130" height="42" text="Add Product" cssclass="primary" onclick="onAdd"/>
+<Button id="btnFilter" left="1160" top="345" width="105" height="42" text="☷  Filters" cssclass="secondary" onclick="onFilter"/>
+<Button id="btnDownload" left="1274" top="345" width="118" height="42" text="Download all" cssclass="secondary" onclick="onDownload"/>
+<Grid id="grdProducts" binddataset="dsProducts" left="330" top="401" width="1062" height="452" cssclass="dataGrid" autofittype="col" selecttype="row" oncelldblclick="onOpenProduct"><Formats><Format id="default"><Columns><Column size="324"/><Column size="179"/><Column size="134"/><Column size="145"/><Column size="179"/><Column size="159"/></Columns><Rows><Row size="44" band="head"/><Row size="48"/></Rows><Band id="head"><Cell col="0" text="Product name"/><Cell col="1" text="Buying price"/><Cell col="2" text="Quantity"/><Cell col="3" text="Threshold"/><Cell col="4" text="Expiry date"/><Cell col="5" text="Status"/></Band><Band id="body"><Cell col="0" text="bind:ProductName"/><Cell col="1" text="bind:BuyingPrice"/><Cell col="2" text="bind:Quantity"/><Cell col="3" text="bind:Threshold"/><Cell col="4" text="bind:ExpiryDate"/><Cell col="5" text="bind:Status" color="expr:Status=='Out of stock'?'#C44C4C':Status=='Low stock'?'#D49B27':'#2D765E'"/></Band></Format></Formats></Grid>
+<Button id="btnPrev" left="330" top="865" width="92" height="35" text="Previous" cssclass="secondary" onclick="onPrev"/>
+<Static id="staPage" left="805" top="868" width="365" height="28" text="" cssclass="pageLabel"/>
+<Button id="btnNext" left="1300" top="865" width="92" height="35" text="Next" cssclass="secondary" onclick="onNext"/>
+</Layout></Layouts>
+<Objects><Dataset id="dsProducts"><ColumnInfo><Column id="ProductID" type="STRING" size="256"/><Column id="ProductName" type="STRING" size="256"/><Column id="Category" type="STRING" size="256"/><Column id="BuyingPrice" type="STRING" size="256"/><Column id="Quantity" type="STRING" size="256"/><Column id="Unit" type="STRING" size="256"/><Column id="Threshold" type="STRING" size="256"/><Column id="ExpiryDate" type="STRING" size="256"/><Column id="Supplier" type="STRING" size="256"/><Column id="Status" type="STRING" size="256"/></ColumnInfo></Dataset></Objects>
+<Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
+
+this.page = 0; this.pageSize = 7; this.searchText = ""; this.statusFilter = "";
+this.onLoad = function() { this.gfnSeed(); this.refresh(); };
+this.onNavInventoryList = function() {};
+this.onComingSoon = function() { this.gfnMessage("This section is outside the current requirements."); };
+this.onNavSupplierList = function() { this.gfnNavigate("SupplierList"); };
+this.onLogout = function() { this.gfnNavigate("Login"); };
+this.refresh = function() {
+  var rows = nexacro.getApplication().inventoryProducts, shown = [], low = 0, out = 0;
+  this.dsProducts.clearData();
+  for (var i=0; i<rows.length; i++) {
+    var item = rows[i], q = Number(item.Quantity), t = Number(item.Threshold);
+    item.Status = q <= 0 ? "Out of stock" : (q <= t ? "Low stock" : "In stock");
+    if (q <= 0) out++; else if (q <= t) low++;
+    if (this.searchText && (item.ProductName + " " + item.ProductID).toLowerCase().indexOf(this.searchText) < 0) continue;
+    if (this.statusFilter && item.Status != this.statusFilter) continue;
+    shown.push(item);
+  }
+  var pages = Math.max(1, Math.ceil(shown.length / this.pageSize));
+  if (this.page >= pages) this.page = pages - 1;
+  for (var j=this.page*this.pageSize; j<Math.min(shown.length,(this.page+1)*this.pageSize); j++) {
+    var row = this.dsProducts.addRow();
+    for (var k in shown[j]) if (this.dsProducts.getColumnInfo(k)) this.dsProducts.setColumn(row,k,shown[j][k]);
+  }
+  this.staCategories.set_text(String((function(){var seen={};for(var n=0;n<rows.length;n++)seen[rows[n].Category]=true;return Object.keys(seen).length;})())); this.staTotal.set_text(String(rows.length)); this.staLow.set_text(String(low)); this.staOut.set_text(String(out));
+  this.staPage.set_text("Showing " + (shown.length ? this.page*this.pageSize+1 : 0) + "–" + Math.min(shown.length,(this.page+1)*this.pageSize) + " of " + shown.length + " products");
+};
+this.onSearch = function() { this.searchText = String(this.edtSearch.value || "").toLowerCase(); this.page=0; this.refresh(); };
+this.onFilter = function() { var a=["","In stock","Low stock","Out of stock"]; this.statusFilter=a[(a.indexOf(this.statusFilter)+1)%a.length]; this.btnFilter.set_text(this.statusFilter || "Filter"); this.page=0; this.refresh(); };
+this.onPrev = function() { if(this.page>0) {this.page--;this.refresh();} };
+this.onNext = function() { if((this.page+1)*this.pageSize<this.filteredCount()) {this.page++;this.refresh();} };
+this.filteredCount = function() { var count=0, rows=nexacro.getApplication().inventoryProducts; for(var i=0;i<rows.length;i++) if((!this.searchText || (rows[i].ProductName+" "+rows[i].ProductID).toLowerCase().indexOf(this.searchText)>=0) && (!this.statusFilter || rows[i].Status==this.statusFilter)) count++; return count; };
+this.onOpenProduct = function() { var r=this.dsProducts.rowposition; if(r<0)return; nexacro.getApplication().selectedProductId=this.dsProducts.getColumn(r,"ProductID"); this.gfnNavigate("ProductDetail"); };
+this.onAdd = function() { this.gfnPopup("ProductForm", 500, 800, "onProductSaved"); };
+this.onProductSaved = function(id, value) { if(!value)return; try { nexacro.getApplication().inventoryProducts.push(JSON.parse(value)); this.refresh(); } catch(e) { this.gfnMessage("Could not read product data."); } };
+this.onDownload = function() { this.gfnMessage("Export will be connected when the product API is ready."); };
+
+]]></Script></Form></FDL>

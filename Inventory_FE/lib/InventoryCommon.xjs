@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Script version="1.0" type="xscript5.1"><![CDATA[
+this.gfnEmpty=function(v){return v===null||v===undefined||String(v).replace(/^\s+|\s+$/g,"")==="";};
+this.gfnEmail=function(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||""));};
+this.gfnNumber=function(v){return !this.gfnEmpty(v)&&!isNaN(Number(v))&&Number(v)>=0;};
+this.gfnMessage=function(message){this.alert(message);};
+this.gfnNavigate=function(name){this.getOwnerFrame().set_formurl("forms::"+name+".xfdl");};
+this.gfnPopup=function(name,w,h,callback){
+  var child=new ChildFrame("popup"+name,0,0,w,h);
+  child.formurl="forms::"+name+".xfdl";
+  child.openalign="center middle";
+  child.showtitlebar=false;
+  child.dragmovetype="all";
+  child.showModal(this.getOwnerFrame(),{},this,callback);
+};
+/* One transaction entry point for the future xapi endpoints. */
+this.gfnTransaction=function(id,path,input,output,args,callback){
+  this.transaction(id,"api::"+path,input||"",output||"",args||"",callback||"onTransaction",true,0,false);
+};
+this.gfnSeed=function(){
+  var app=nexacro.getApplication();
+  if(!app.inventoryProducts)app.inventoryProducts=[
+    {ProductID:"PRD-001",ProductName:"Wireless Mouse",Category:"Electronics",BuyingPrice:"24.00",Quantity:"120",Unit:"pcs",Threshold:"20",ExpiryDate:"2027-12-31",Supplier:"Tech Supplies",Status:"In stock"},
+    {ProductID:"PRD-002",ProductName:"USB-C Hub",Category:"Electronics",BuyingPrice:"38.50",Quantity:"8",Unit:"pcs",Threshold:"15",ExpiryDate:"2027-12-31",Supplier:"Nova Trading",Status:"Low stock"},
+    {ProductID:"PRD-003",ProductName:"Desk Lamp",Category:"Office",BuyingPrice:"42.00",Quantity:"0",Unit:"pcs",Threshold:"10",ExpiryDate:"2028-06-30",Supplier:"Bright Goods",Status:"Out of stock"},
+    {ProductID:"PRD-004",ProductName:"Notebook A5",Category:"Stationery",BuyingPrice:"3.20",Quantity:"220",Unit:"pcs",Threshold:"40",ExpiryDate:"2028-12-31",Supplier:"Office Market",Status:"In stock"},
+    {ProductID:"PRD-005",ProductName:"Water Bottle",Category:"Lifestyle",BuyingPrice:"9.90",Quantity:"65",Unit:"pcs",Threshold:"18",ExpiryDate:"2027-08-30",Supplier:"Nova Trading",Status:"In stock"}
+  ];
+  if(!app.inventorySuppliers)app.inventorySuppliers=[
+    {SupplierID:"SUP-001",SupplierName:"Tech Supplies",Product:"Wireless Mouse",Category:"Electronics",BuyingPrice:"24.00",Contact:"0900000101",Email:"sales@tech.test",Type:"Taking return",OnTheWay:"20"},
+    {SupplierID:"SUP-002",SupplierName:"Nova Trading",Product:"USB-C Hub",Category:"Electronics",BuyingPrice:"38.50",Contact:"0900000102",Email:"hello@nova.test",Type:"Not taking return",OnTheWay:"12"},
+    {SupplierID:"SUP-003",SupplierName:"Bright Goods",Product:"Desk Lamp",Category:"Office",BuyingPrice:"42.00",Contact:"0900000103",Email:"contact@bright.test",Type:"Taking return",OnTheWay:"0"}
+  ];
+};
+]]></Script>

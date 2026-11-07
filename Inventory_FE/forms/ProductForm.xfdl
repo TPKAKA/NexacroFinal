@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1"><Form id="ProductForm" width="500" height="800" titletext="ProductForm" onload="onLoad">
+<Layouts><Layout width="500" height="800">
+<Static id="staFormTitle" left="28" top="23" width="440" height="40" text="New Product" cssclass="popupTitle"/>
+<Static id="staImageBox" left="140" top="70" width="90" height="84" text="" cssclass="uploadBox"/>
+<Static id="staImageGlyph" left="162" top="83" width="48" height="55" text="+" cssclass="uploadGlyph"/>
+<Static id="staImage" left="240" top="82" width="220" height="50" text="Drag image here
+or Browse image" cssclass="uploadHint"/>
+<FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker"/>
+<Static id="staProductName" left="28" top="172" width="150" height="40" text="Product Name" cssclass="modalLabel"/>
+<Edit id="edtProductName" left="188" top="172" width="280" height="42" cssclass="modalField" displaynulltext="Enter product name"/>
+<Static id="staProductID" left="28" top="239" width="150" height="40" text="Product ID" cssclass="modalLabel"/>
+<Edit id="edtProductID" left="188" top="239" width="280" height="42" cssclass="modalField" displaynulltext="Enter product id"/>
+<Static id="staCategory" left="28" top="306" width="150" height="40" text="Category" cssclass="modalLabel"/>
+<Combo id="edtCategory" left="188" top="306" width="280" height="42" cssclass="modalField" innerdataset="dsCategory" codecolumn="Code" datacolumn="Label"/>
+<Static id="staBuyingPrice" left="28" top="373" width="150" height="40" text="Buying Price" cssclass="modalLabel"/>
+<Edit id="edtBuyingPrice" left="188" top="373" width="280" height="42" cssclass="modalField" displaynulltext="Enter buying price"/>
+<Static id="staQuantity" left="28" top="440" width="150" height="40" text="Quantity" cssclass="modalLabel"/>
+<Edit id="edtQuantity" left="188" top="440" width="280" height="42" cssclass="modalField" displaynulltext="Enter quantity"/>
+<Static id="staUnit" left="28" top="507" width="150" height="40" text="Unit" cssclass="modalLabel"/>
+<Combo id="edtUnit" left="188" top="507" width="280" height="42" cssclass="modalField" innerdataset="dsUnit" codecolumn="Code" datacolumn="Label"/>
+<Static id="staExpiryDate" left="28" top="574" width="150" height="40" text="Expiry Date" cssclass="modalLabel"/>
+<Edit id="edtExpiryDate" left="188" top="574" width="280" height="42" cssclass="modalField" displaynulltext="Enter expiry date"/>
+<Static id="staThreshold" left="28" top="641" width="150" height="40" text="Threshold Value" cssclass="modalLabel"/>
+<Edit id="edtThreshold" left="188" top="641" width="280" height="42" cssclass="modalField" displaynulltext="Enter threshold value"/>
+<Button id="btnCancel" left="267" top="735" width="94" height="40" text="Discard" cssclass="secondary" onclick="onCancel"/>
+<Button id="btnSave" left="370" top="735" width="98" height="40" text="Add Product" cssclass="primary" onclick="onSave"/>
+</Layout></Layouts>
+<Objects><Dataset id="dsCategory"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Electronics</Col><Col id="Label">Electronics</Col></Row><Row><Col id="Code">Office</Col><Col id="Label">Office</Col></Row><Row><Col id="Code">Stationery</Col><Col id="Label">Stationery</Col></Row><Row><Col id="Code">Lifestyle</Col><Col id="Label">Lifestyle</Col></Row><Row><Col id="Code">Other</Col><Col id="Label">Other</Col></Row></Rows></Dataset><Dataset id="dsUnit"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">pcs</Col><Col id="Label">pcs</Col></Row><Row><Col id="Code">box</Col><Col id="Label">box</Col></Row><Row><Col id="Code">kg</Col><Col id="Label">kg</Col></Row><Row><Col id="Code">litre</Col><Col id="Label">litre</Col></Row></Rows></Dataset></Objects>
+<Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
+this.onLoad=function(){};
+this.onCancel=function(){this.close();};
+this.onSave=function(){
+  var product={}; var fields=["ProductName","ProductID","Category","BuyingPrice","Quantity","Unit","ExpiryDate","Threshold"];
+  for(var i=0;i<fields.length;i++) product[fields[i]]=this["edt"+fields[i]].value;
+  for(var j=0;j<fields.length;j++) if(this.gfnEmpty(product[fields[j]]))return this.gfnMessage(fields[j]+" is required.");
+  if(!this.gfnNumber(product.BuyingPrice)||!this.gfnNumber(product.Quantity)||!this.gfnNumber(product.Threshold))return this.gfnMessage("Price, quantity and threshold must be non-negative numbers.");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(product.ExpiryDate))return this.gfnMessage("Expiry date must be YYYY-MM-DD.");
+  var rows=nexacro.getApplication().inventoryProducts;
+  for(var k=0;k<rows.length;k++)if(rows[k].ProductID==product.ProductID)return this.gfnMessage("Product ID already exists.");
+  product.Supplier=""; this.close(JSON.stringify(product));
+};
+]]></Script></Form></FDL>
