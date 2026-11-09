@@ -339,11 +339,14 @@ this.gfnNumber=function(v){return !this.gfnEmpty(v)&&!isNaN(Number(v))&&Number(v
 this.gfnMessage=function(message){this.alert(message);};
 this.gfnNavigate=function(name){this.getOwnerFrame().set_formurl("forms::"+name+".xfdl");};
 this.gfnPopup=function(name,w,h,callback){
-  var child=new ChildFrame("popup"+name,0,0,w,h);
+  var child=new ChildFrame();
+  child.init("popup"+name,0,0,w,h);
   child.formurl="forms::"+name+".xfdl";
   child.openalign="center middle";
   child.showtitlebar=false;
   child.dragmovetype="all";
+  child.background="#FFFFFF";
+  child.border="1px solid #DCE5E2";
   child.showModal(this.getOwnerFrame(),{},this,callback);
 };
 /* One transaction entry point for the future xapi endpoints. */

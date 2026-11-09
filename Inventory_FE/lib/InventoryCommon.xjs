@@ -82,7 +82,7 @@ this.gfnLoadCodes = function(callback) {
     if (typeof this[handler] === "function") this[handler]("common-codes-cache", 0, "");
     return null;
   }
-  return this.gfnTransaction("common-codes", "codes/list", "", "dsCodes=dsCodes", "", callback || "onCodesLoaded");
+  return this.gfnTransaction("common-codes", "codes/list", "dsCodes=dsCodes", "dsCodes=dsCodes", "", callback || "onCodesLoaded");
 };
 /**
  * Cache a non-empty common-code Dataset for this application session.
@@ -122,11 +122,14 @@ this.gfnTransaction = function(id, path, input, output, args, callback) {
  * @returns {void}
  */
 this.gfnPopup = function(name, width, height, callback) {
-  var child = new ChildFrame("popup" + name, 0, 0, width, height);
+  var child = new ChildFrame();
+  child.init("popup" + name, 0, 0, width, height);
   child.formurl = "forms::" + name + ".xfdl";
   child.openalign = "center middle";
   child.showtitlebar = false;
   child.dragmovetype = "all";
+  child.background = "#FFFFFF";
+  child.border = "1px solid #DCE5E2";
   child.showModal(this.getOwnerFrame(), {}, this, callback);
 };
 /**
