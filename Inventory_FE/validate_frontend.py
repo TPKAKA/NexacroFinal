@@ -25,6 +25,23 @@ for path in files:
             for handler in handlers:
                 if not re.search(r'\bthis\.' + re.escape(handler) + r'\s*=', script):
                     errors.append(f'{path}: missing {handler}')
+    if path.suffix == '.xfdl':
+        form = tree.getroot()
+        if form.findall('./BindItem'):
+            errors.append(f'{path}: BindItem must be nested under <Bind>')
+        controls = {node.get('id') for node in form.findall('.//Layouts//Layout//*') if node.get('id')}
+        datasets = {node.get('id'): node for node in form.findall('./Objects/Dataset') if node.get('id')}
+        for binding in form.findall('./Bind/BindItem'):
+            component = binding.get('compid', '').split('.')[-1]
+            dataset_id = binding.get('datasetid', '')
+            column_id = binding.get('columnid', '')
+            if component not in controls:
+                errors.append(f'{path}: binding references missing component {component}')
+            dataset = datasets.get(dataset_id)
+            if dataset is None:
+                errors.append(f'{path}: binding references missing Dataset {dataset_id}')
+            elif dataset.find(f'./ColumnInfo/Column[@id="{column_id}"]') is None:
+                errors.append(f'{path}: binding references missing column {dataset_id}.{column_id}')
 assert len(forms) == 7, f'Expected 7 forms, found {len(forms)}'
 if errors:
     raise SystemExit('\n'.join(errors))

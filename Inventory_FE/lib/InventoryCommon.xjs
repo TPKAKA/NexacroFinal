@@ -1,35 +1,109 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Script version="1.0" type="xscript5.1"><![CDATA[
-this.gfnEmpty=function(v){return v===null||v===undefined||String(v).replace(/^\s+|\s+$/g,"")==="";};
-this.gfnEmail=function(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||""));};
-this.gfnNumber=function(v){return !this.gfnEmpty(v)&&!isNaN(Number(v))&&Number(v)>=0;};
-this.gfnMessage=function(message){this.alert(message);};
-this.gfnNavigate=function(name){this.getOwnerFrame().set_formurl("forms::"+name+".xfdl");};
-this.gfnPopup=function(name,w,h,callback){
-  var child=new ChildFrame("popup"+name,0,0,w,h);
-  child.formurl="forms::"+name+".xfdl";
-  child.openalign="center middle";
-  child.showtitlebar=false;
-  child.dragmovetype="all";
-  child.showModal(this.getOwnerFrame(),{},this,callback);
+<Script version="1.0" type="xscript5.1"><![CDATA[this.gfnEmpty = function(value) {
+  return value === null || value === undefined || String(value).replace(/^\s+|\s+$/g, "") === "";
 };
-/* One transaction entry point for the future xapi endpoints. */
-this.gfnTransaction=function(id,path,input,output,args,callback){
-  this.transaction(id,"api::"+path,input||"",output||"",args||"",callback||"onTransaction",true,0,false);
+this.gfnEmail = function(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 };
-this.gfnSeed=function(){
-  var app=nexacro.getApplication();
-  if(!app.inventoryProducts)app.inventoryProducts=[
-    {ProductID:"PRD-001",ProductName:"Wireless Mouse",Category:"Electronics",BuyingPrice:"24.00",Quantity:"120",Unit:"pcs",Threshold:"20",ExpiryDate:"2027-12-31",Supplier:"Tech Supplies",Status:"In stock"},
-    {ProductID:"PRD-002",ProductName:"USB-C Hub",Category:"Electronics",BuyingPrice:"38.50",Quantity:"8",Unit:"pcs",Threshold:"15",ExpiryDate:"2027-12-31",Supplier:"Nova Trading",Status:"Low stock"},
-    {ProductID:"PRD-003",ProductName:"Desk Lamp",Category:"Office",BuyingPrice:"42.00",Quantity:"0",Unit:"pcs",Threshold:"10",ExpiryDate:"2028-06-30",Supplier:"Bright Goods",Status:"Out of stock"},
-    {ProductID:"PRD-004",ProductName:"Notebook A5",Category:"Stationery",BuyingPrice:"3.20",Quantity:"220",Unit:"pcs",Threshold:"40",ExpiryDate:"2028-12-31",Supplier:"Office Market",Status:"In stock"},
-    {ProductID:"PRD-005",ProductName:"Water Bottle",Category:"Lifestyle",BuyingPrice:"9.90",Quantity:"65",Unit:"pcs",Threshold:"18",ExpiryDate:"2027-08-30",Supplier:"Nova Trading",Status:"In stock"}
-  ];
-  if(!app.inventorySuppliers)app.inventorySuppliers=[
-    {SupplierID:"SUP-001",SupplierName:"Tech Supplies",Product:"Wireless Mouse",Category:"Electronics",BuyingPrice:"24.00",Contact:"0900000101",Email:"sales@tech.test",Type:"Taking return",OnTheWay:"20"},
-    {SupplierID:"SUP-002",SupplierName:"Nova Trading",Product:"USB-C Hub",Category:"Electronics",BuyingPrice:"38.50",Contact:"0900000102",Email:"hello@nova.test",Type:"Not taking return",OnTheWay:"12"},
-    {SupplierID:"SUP-003",SupplierName:"Bright Goods",Product:"Desk Lamp",Category:"Office",BuyingPrice:"42.00",Contact:"0900000103",Email:"contact@bright.test",Type:"Taking return",OnTheWay:"0"}
-  ];
+this.gfnNumber = function(value) {
+  return !this.gfnEmpty(value) && !isNaN(Number(value)) && Number(value) >= 0;
+};
+this.gfnDate = function(value) {
+  var text = String(value || "").replace(/^\s+|\s+$/g, "");
+  var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (!match) return false;
+  var year = Number(match[1]);
+  var month = Number(match[2]);
+  var day = Number(match[3]);
+  if (year < 1 || month < 1 || month > 12) return false;
+  var leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  var daysByMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day >= 1 && day <= daysByMonth[month - 1];
+};
+this.gfnMessage = function(message) { this.alert(message); };
+this.gfnNavigate = function(name) {
+  this.getOwnerFrame().set_formurl("forms::" + name + ".xfdl");
+};
+this.gfnBindRecord = function(dataset, values) {
+  var row = dataset.rowcount ? 0 : dataset.addRow();
+  for (var key in values) {
+    if (values.hasOwnProperty(key) && dataset.getColumnInfo(key)) dataset.setColumn(row, key, values[key]);
+  }
+  dataset.rowposition = row;
+  return row;
+};
+this.gfnLoadCodes = function(callback) {
+  this.gfnTransaction("common-codes", "codes/list", "", "dsCodes=dsCodes", "", callback || "onCodesLoaded");
+};
+this.gfnTransaction = function(id, path, input, output, args, callback) {
+  var app = nexacro.getApplication();
+  var parameters = String(args || "");
+  if (app.sessionToken && parameters.indexOf("sessionToken=") < 0) {
+    parameters += (parameters ? " " : "") + "sessionToken=" + app.sessionToken;
+  }
+  return this.transaction(id, "api::" + path, input || "", output || "", parameters,
+                          callback || "onTransaction", true, 3, false);
+};
+this.gfnPopup = function(name, width, height, callback) {
+  var child = new ChildFrame("popup" + name, 0, 0, width, height);
+  child.formurl = "forms::" + name + ".xfdl";
+  child.openalign = "center middle";
+  child.showtitlebar = false;
+  child.dragmovetype = "all";
+  child.showModal(this.getOwnerFrame(), {}, this, callback);
+};
+this.gfnDownload = function(path, filename, parameters) {
+  var app = nexacro.getApplication();
+  if (!app.sessionToken) {
+    this.gfnMessage("Your session has expired. Sign in again.");
+    this.gfnNavigate("Login");
+    return;
+  }
+  if (!this._inventoryFileDownTransfer) {
+    this._inventoryFileDownTransfer = new nexacro.FileDownTransfer("inventoryFileDownTransfer", this);
+    this.addChild("inventoryFileDownTransfer", this._inventoryFileDownTransfer);
+  }
+  var transfer = this._inventoryFileDownTransfer;
+  transfer.downloadfilename = filename;
+  transfer.clearPostDataList();
+  transfer.setPostData("sessionToken", app.sessionToken);
+  if (parameters) {
+    for (var key in parameters) {
+      if (parameters.hasOwnProperty(key)) transfer.setPostData(key, parameters[key]);
+    }
+  }
+  transfer.download("api::" + path);
+};
+this.gfnHandleApiError = function(errorCode, errorMessage) {
+  var message = String(errorMessage || "The request could not be completed.");
+  this.gfnMessage(message);
+  if (message.toLowerCase().indexOf("session has expired") >= 0) {
+    var app = nexacro.getApplication();
+    app.sessionToken = "";
+    app.currentUserName = "";
+    this.gfnNavigate("Login");
+  }
+};
+this.gfnLogout = function() {
+  var app = nexacro.getApplication();
+  if (!app.sessionToken) {
+    this.onLogoutResult("auth-logout", 0, "");
+    return;
+  }
+  this.dsLogout.clearData();
+  var row = this.dsLogout.addRow();
+  this.dsLogout.setColumn(row, "SessionToken", app.sessionToken);
+  this.gfnTransaction("auth-logout", "auth/logout", "dsLogout=dsLogout", "", "", "onLogoutResult");
+};
+this.onLogoutResult = function(serviceId, errorCode, errorMessage) {
+  var app = nexacro.getApplication();
+  if (errorCode < 0 && String(errorMessage || "").toLowerCase().indexOf("session has expired") < 0) {
+    this.gfnMessage(errorMessage || "The session could not be closed on the server.");
+    return;
+  }
+  app.sessionToken = "";
+  app.currentUserName = "";
+  app.selectedProductId = "";
+  app.editProductId = "";
+  this.gfnNavigate("Login");
 };
 ]]></Script>

@@ -6,7 +6,7 @@
 <Static id="staImageGlyph" left="162" top="83" width="48" height="55" text="+" cssclass="uploadGlyph"/>
 <Static id="staImage" left="240" top="82" width="220" height="50" text="Drag image here
 or Browse image" cssclass="uploadHint"/>
-<FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker"/>
+<FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker" onitemchanged="onImageChanged" onsuccess="onImageUploadSuccess" onerror="onImageUploadError"/>
 <Static id="staProductName" left="28" top="172" width="150" height="40" text="Product Name" cssclass="modalLabel"/>
 <Edit id="edtProductName" left="188" top="172" width="280" height="42" cssclass="modalField" displaynulltext="Enter product name"/>
 <Static id="staProductID" left="28" top="239" width="150" height="40" text="Product ID" cssclass="modalLabel"/>
@@ -26,18 +26,97 @@ or Browse image" cssclass="uploadHint"/>
 <Button id="btnCancel" left="267" top="735" width="94" height="40" text="Discard" cssclass="secondary" onclick="onCancel"/>
 <Button id="btnSave" left="370" top="735" width="98" height="40" text="Add Product" cssclass="primary" onclick="onSave"/>
 </Layout></Layouts>
-<Objects><Dataset id="dsCategory"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Electronics</Col><Col id="Label">Electronics</Col></Row><Row><Col id="Code">Office</Col><Col id="Label">Office</Col></Row><Row><Col id="Code">Stationery</Col><Col id="Label">Stationery</Col></Row><Row><Col id="Code">Lifestyle</Col><Col id="Label">Lifestyle</Col></Row><Row><Col id="Code">Other</Col><Col id="Label">Other</Col></Row></Rows></Dataset><Dataset id="dsUnit"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">pcs</Col><Col id="Label">pcs</Col></Row><Row><Col id="Code">box</Col><Col id="Label">box</Col></Row><Row><Col id="Code">kg</Col><Col id="Label">kg</Col></Row><Row><Col id="Code">litre</Col><Col id="Label">litre</Col></Row></Rows></Dataset></Objects>
+<Objects><Dataset id="dsCategory"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Electronics</Col><Col id="Label">Electronics</Col></Row><Row><Col id="Code">Office</Col><Col id="Label">Office</Col></Row><Row><Col id="Code">Stationery</Col><Col id="Label">Stationery</Col></Row><Row><Col id="Code">Lifestyle</Col><Col id="Label">Lifestyle</Col></Row><Row><Col id="Code">Other</Col><Col id="Label">Other</Col></Row></Rows></Dataset><Dataset id="dsUnit"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">pcs</Col><Col id="Label">pcs</Col></Row><Row><Col id="Code">box</Col><Col id="Label">box</Col></Row><Row><Col id="Code">kg</Col><Col id="Label">kg</Col></Row><Row><Col id="Code">litre</Col><Col id="Label">litre</Col></Row></Rows></Dataset><Dataset id="dsProduct" onrowsetchanged="onProductDatasetChanged"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSaved"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsProductDetail"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductIDLabel" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierInfo" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/><Column id="OverviewText" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsRequest"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsCodes"><ColumnInfo><Column id="CodeType" type="STRING" size="1024"/><Column id="Code" type="STRING" size="1024"/><Column id="Label" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
-this.onLoad=function(){};
-this.onCancel=function(){this.close();};
-this.onSave=function(){
-  var product={}; var fields=["ProductName","ProductID","Category","BuyingPrice","Quantity","Unit","ExpiryDate","Threshold"];
-  for(var i=0;i<fields.length;i++) product[fields[i]]=this["edt"+fields[i]].value;
-  for(var j=0;j<fields.length;j++) if(this.gfnEmpty(product[fields[j]]))return this.gfnMessage(fields[j]+" is required.");
-  if(!this.gfnNumber(product.BuyingPrice)||!this.gfnNumber(product.Quantity)||!this.gfnNumber(product.Threshold))return this.gfnMessage("Price, quantity and threshold must be non-negative numbers.");
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(product.ExpiryDate))return this.gfnMessage("Expiry date must be YYYY-MM-DD.");
-  var rows=nexacro.getApplication().inventoryProducts;
-  for(var k=0;k<rows.length;k++)if(rows[k].ProductID==product.ProductID)return this.gfnMessage("Product ID already exists.");
-  product.Supplier=""; this.close(JSON.stringify(product));
+this.isEditing = false;
+this.imageUploaded = false;
+this.onLoad = function() {
+  var app = nexacro.getApplication();
+  this.isEditing = !this.gfnEmpty(app.editProductId);
+  this.gfnBindRecord(this.dsProduct, {
+    ProductID: "", ProductName: "", Category: "Electronics", BuyingPrice: "0",
+    Quantity: "0", Unit: "pcs", ExpiryDate: "2027-12-31", Threshold: "0",
+    Supplier: "", SupplierID: "", ImageUrl: "", Status: ""
+  });
+  this.gfnBindRecord(this.dsRequest, { ProductID: app.editProductId || "" });
+  this.gfnLoadCodes("onProductCodesLoaded");
+  if (this.isEditing) {
+    this.staFormTitle.set_text("Edit Product");
+    this.btnSave.set_text("Save changes");
+    this.gfnTransaction("product-edit-load", "products/detail", "dsRequest=dsRequest",
+      "dsProduct=dsProduct dsProductDetail=dsProductDetail", "", "onEditProductLoaded");
+  }
 };
-]]></Script></Form></FDL>
+this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0) return;
+  this.dsCategory.clearData();
+  this.dsUnit.clearData();
+  for (var i = 0; i < this.dsCodes.rowcount; i++) {
+    var type = this.dsCodes.getColumn(i, "CodeType");
+    var value = this.dsCodes.getColumn(i, "Code");
+    var target = type === "Category" ? this.dsCategory : (type === "Unit" ? this.dsUnit : null);
+    if (target) {
+      var row = target.addRow();
+      target.setColumn(row, "Code", value);
+      target.setColumn(row, "Label", value);
+    }
+  }
+};
+this.onEditProductLoaded = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0 || !this.dsProduct.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+};
+this.onImageChanged = function() { this.imageUploaded = false; };
+this.onSave = function() {
+  var row = this.dsProduct.rowposition < 0 ? 0 : this.dsProduct.rowposition;
+  var fields = ["ProductName", "ProductID", "Category", "BuyingPrice", "Quantity", "Unit", "ExpiryDate", "Threshold"];
+  for (var i = 0; i < fields.length; i++) {
+    if (this.gfnEmpty(this.dsProduct.getColumn(row, fields[i]))) return this.gfnMessage(fields[i] + " is required.");
+  }
+  if (!this.gfnNumber(this.dsProduct.getColumn(row, "BuyingPrice")) ||
+      !this.gfnNumber(this.dsProduct.getColumn(row, "Quantity")) ||
+      !this.gfnNumber(this.dsProduct.getColumn(row, "Threshold"))) {
+    return this.gfnMessage("Price, quantity and threshold must be non-negative numbers.");
+  }
+  if (!this.gfnDate(this.dsProduct.getColumn(row, "ExpiryDate"))) return this.gfnMessage("Expiry date must be YYYY-MM-DD.");
+  if (this.uplImage.getItemCount(true) > 0 && !this.imageUploaded) {
+    var token = nexacro.getApplication().sessionToken;
+    if (!token) return this.gfnHandleApiError(-1, "Your session has expired. Sign in again.");
+    this.uplImage.upload("api::uploads/image?sessionToken=" + token);
+    return;
+  }
+  this.submitProduct();
+};
+this.onImageUploadSuccess = function(obj, e) {
+  var uploaded = e && e.datasets;
+  var result = null;
+  if (uploaded && uploaded.length) result = uploaded[0];
+  else if (uploaded && uploaded.getCount && uploaded.getCount() > 0) result = uploaded.getItem(0);
+  if (!result || !result.rowcount) return this.gfnMessage("The image upload returned no image URL.");
+  var url = result.getColumn(0, "ImageUrl");
+  if (this.gfnEmpty(url)) return this.gfnMessage("The image upload returned no image URL.");
+  var row = this.dsProduct.rowposition < 0 ? 0 : this.dsProduct.rowposition;
+  this.dsProduct.setColumn(row, "ImageUrl", url);
+  this.imageUploaded = true;
+  this.submitProduct();
+};
+this.onImageUploadError = function(obj, e) {
+  this.gfnMessage(e && e.errormsg ? e.errormsg : "The image could not be uploaded.");
+};
+this.submitProduct = function() {
+  var mode = this.isEditing ? "mode=update" : "";
+  this.gfnTransaction("product-save", "products/save", "dsProduct=dsProduct", "dsSaved=dsSaved",
+    mode, "onProductSaveResult");
+};
+this.onProductSaveResult = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0 || !this.dsSaved.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  nexacro.getApplication().editProductId = "";
+  this.close("saved");
+};
+this.onCancel = function() {
+  nexacro.getApplication().editProductId = "";
+  this.close("");
+};
+this.onProductDatasetChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_CHANGESTATUS) this.productInputChanged = true;
+};
+]]></Script><Bind><BindItem id="bind0" compid="edtProductName" propid="value" datasetid="dsProduct" columnid="ProductName"/><BindItem id="bind1" compid="edtProductID" propid="value" datasetid="dsProduct" columnid="ProductID"/><BindItem id="bind2" compid="edtCategory" propid="value" datasetid="dsProduct" columnid="Category"/><BindItem id="bind3" compid="edtBuyingPrice" propid="value" datasetid="dsProduct" columnid="BuyingPrice"/><BindItem id="bind4" compid="edtQuantity" propid="value" datasetid="dsProduct" columnid="Quantity"/><BindItem id="bind5" compid="edtUnit" propid="value" datasetid="dsProduct" columnid="Unit"/><BindItem id="bind6" compid="edtExpiryDate" propid="value" datasetid="dsProduct" columnid="ExpiryDate"/><BindItem id="bind7" compid="edtThreshold" propid="value" datasetid="dsProduct" columnid="Threshold"/></Bind></Form></FDL>

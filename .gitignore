@@ -1,0 +1,10 @@
+**/target/
+**/__pycache__/
+**/*.py[cod]
+**/data/
+**/uploads/
+
+# Nexacro Studio-generated local files
+**/$Geninfo$.geninfo
+**/_resource_/$temporary$/
+Inventory_FE/_resource_/_theme_/blue/

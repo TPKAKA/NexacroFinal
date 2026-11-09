@@ -107,10 +107,10 @@ def inventory(root):
     parts = shell('InventoryList',True)
     parts += [c('Static','staOverallCard',312,124,1096,186,'','card'),
               c('Static','staOverallTitle',330,140,400,34,'Overall Inventory','sectionTitle')]
-    labels = [('Categories','staCategories',330,'14','Last 7 days'),
-              ('Total Products','staTotal',600,'0','Last 7 days'),
-              ('Top Selling','staTopSelling',870,'5','Last 7 days'),
-              ('Low Stocks','staLow',1140,'0','Ordered')]
+    labels = [('Categories','staCategories',330,'0','Product categories'),
+              ('Total Products','staTotal',600,'0','Products in inventory'),
+              ('Top Selling','staTopSelling',870,'—','No sales data is recorded'),
+              ('Low Stocks','staLow',1140,'0','At or below threshold')]
     for label,key,x,value,note in labels:
         parts += [c('Static','lab'+key,x,195,225,24,label,'metricLabel'),
                   c('Static',key,x,222,135,40,value,'metric'),
@@ -247,18 +247,19 @@ def apply(root):
     app.write_text(source,encoding='utf-8')
     (root/'_resource_'/'_xcss_'/'inventory.xcss').write_text('''<?xml version="1.0" encoding="utf-8"?>
 <XCSS version="1.1"><CSSData><![CDATA[
-Form { background:#F0F1F3; color:#202329; font:14px "Segoe UI"; }
+.Form { background:#F0F1F3; color:#202329; font:14px "Segoe UI"; }
 .Static.authCanvas { background:#FFFFFF; }
 .Static.sidebar { background:#FFFFFF; -nexa-border:0px none; }
 .Static.topbar { background:#FFFFFF; -nexa-border:0px none; }
-.Static.logoMark, .Static.authLogoMark, .Static.smallLogo { background:#0BA8D7; color:#FFFFFF; text-align:center; font:700 28px "Segoe UI"; border-radius:7px; }
-.Static.authLogoMark { font:700 110px "Segoe UI"; border-radius:20px; }
-.Static.smallLogo { font:700 34px "Segoe UI"; }
+.Static.logoMark { background:#0BA8D7; color:#FFFFFF; -nexa-text-align:center; font:700 28px "Segoe UI"; border-radius:7px; }
+.Static.authLogoMark { background:#0BA8D7; color:#FFFFFF; -nexa-text-align:center; font:700 110px "Segoe UI"; border-radius:20px; }
+.Static.smallLogo { background:#0BA8D7; color:#FFFFFF; -nexa-text-align:center; font:700 34px "Segoe UI"; border-radius:7px; }
 .Static.brand { color:#1598CC; font:700 25px "Segoe UI"; }
-.Static.authBrand { color:#1598CC; text-align:center; font:700 52px "Segoe UI"; }
-.Button.nav, .Button.nav[status=focused] { background:transparent; color:#727C89; -nexa-border:0px none; text-align:left; -nexa-text-padding:0px 14px; font:14px "Segoe UI"; }
-.Button.navActive, .Button.navActive[status=focused] { background:#F4F9FF; color:#2475D6; -nexa-border:0px none; text-align:left; -nexa-text-padding:0px 14px; font:600 14px "Segoe UI"; }
-.Static.globalSearchText, .Edit.globalSearch { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-text-padding:0px 14px; font:13px "Segoe UI"; }
+.Static.authBrand { color:#1598CC; -nexa-text-align:center; font:700 52px "Segoe UI"; }
+.Button.nav, .Button.nav[status=focused] { background:transparent; color:#727C89; -nexa-border:0px none; -nexa-text-align:left; -nexa-text-padding:0px 14px; font:14px "Segoe UI"; }
+.Button.navActive, .Button.navActive[status=focused] { background:#F4F9FF; color:#2475D6; -nexa-border:0px none; -nexa-text-align:left; -nexa-text-padding:0px 14px; font:600 14px "Segoe UI"; }
+.Static.globalSearchText { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-padding:0px 14px; font:13px "Segoe UI"; }
+.Edit.globalSearch { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-padding:0px 14px; font:13px "Segoe UI"; }
 .Button.topSearchButton { background:#F9FAFC; color:#3578C9; -nexa-border:1px solid #E9EBF0; font:12px "Segoe UI"; }
 .Static.topIcon { color:#88919E; font:24px "Segoe UI"; }
 .Static.avatar { color:#576675; font:25px "Segoe UI"; }
@@ -268,24 +269,24 @@ Form { background:#F0F1F3; color:#202329; font:14px "Segoe UI"; }
 .Static.metricLabel { color:#497DD0; font:600 14px "Segoe UI"; }
 .Static.metric { color:#353B45; font:600 19px "Segoe UI"; }
 .Static.hint, .Static.muted { color:#9CA4AF; font:12px "Segoe UI"; }
-.Static.pageLabel { color:#727C89; text-align:center; font:13px "Segoe UI"; }
+.Static.pageLabel { color:#727C89; -nexa-text-align:center; font:13px "Segoe UI"; }
 .Button.primary, .Button.primary[status=focused] { background:#1E6FD9; color:#FFFFFF; -nexa-border:1px solid #1E6FD9; border-radius:4px; font:600 13px "Segoe UI"; }
 .Button.secondary, .Button.secondary[status=focused] { background:#FFFFFF; color:#78818D; -nexa-border:1px solid #E0E4E9; border-radius:4px; font:13px "Segoe UI"; }
 .Button.link { background:transparent; color:#1E6FD9; -nexa-border:0px none; font:600 12px "Segoe UI"; }
 .Grid.dataGrid { background:#FFFFFF; -nexa-border:0px none; color:#444C57; font:13px "Segoe UI"; }
-.Static.authTitle { color:#20252D; text-align:center; font:700 30px "Segoe UI"; }
+.Static.authTitle { color:#20252D; -nexa-text-align:center; font:700 30px "Segoe UI"; }
 .Static.fieldLabel { color:#565E69; font:13px "Segoe UI"; }
-.Edit.field, .Combo.field { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:5px; -nexa-text-padding:0px 12px; color:#303943; font:14px "Segoe UI"; }
+.Edit.field, .Combo.field { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:5px; -nexa-padding:0px 12px; color:#303943; font:14px "Segoe UI"; }
 .Static.popupTitle { color:#262D36; font:600 22px "Segoe UI"; }
 .Static.modalLabel { color:#454D58; font:13px "Segoe UI"; }
-.Edit.modalField, .Combo.modalField { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:5px; -nexa-text-padding:0px 10px; color:#303943; font:13px "Segoe UI"; }
+.Edit.modalField, .Combo.modalField { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:5px; -nexa-padding:0px 10px; color:#303943; font:13px "Segoe UI"; }
 .Static.uploadBox { background:#FFFFFF; -nexa-border:1px dashed #DDE2E8; border-radius:6px; }
-.Static.uploadGlyph { color:#A2ADB9; text-align:center; font:36px "Segoe UI"; }
+.Static.uploadGlyph { color:#A2ADB9; -nexa-text-align:center; font:36px "Segoe UI"; }
 .Static.uploadHint { color:#9CA4AF; font:12px "Segoe UI"; }
 .FileUpload.uploadPicker { color:#1E6FD9; font:12px "Segoe UI"; }
 .Static.detailBody { color:#626C78; font:14px "Segoe UI"; }
 .Static.stockTable { background:#F8F9FB; color:#626C78; -nexa-border:1px solid #EEF0F2; font:13px "Segoe UI"; }
-.Static.imagePlaceholder { background:#F7F8FA; color:#9FA8B3; -nexa-border:1px dashed #DDE2E8; text-align:center; font:13px "Segoe UI"; }
+.Static.imagePlaceholder { background:#F7F8FA; color:#9FA8B3; -nexa-border:1px dashed #DDE2E8; -nexa-text-align:center; font:13px "Segoe UI"; }
 .Static.status { color:#29A46B; font:14px "Segoe UI"; }
 .Button.tab { background:#FFFFFF; color:#7D8793; -nexa-border:0px none; font:14px "Segoe UI"; }
 .Button.tabActive { background:#FFFFFF; color:#2C6EB6; -nexa-border:0px none; font:600 14px "Segoe UI"; }

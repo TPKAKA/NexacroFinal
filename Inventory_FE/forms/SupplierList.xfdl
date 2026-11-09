@@ -27,46 +27,81 @@
 <Static id="staCount" left="805" top="868" width="365" height="28" text="" cssclass="pageLabel"/>
 <Button id="btnNext" left="1300" top="865" width="92" height="35" text="Next" cssclass="secondary" onclick="onNext"/>
 </Layout></Layouts>
-<Objects><Dataset id="dsSuppliers"><ColumnInfo><Column id="SupplierID" type="STRING" size="256"/><Column id="SupplierName" type="STRING" size="256"/><Column id="Product" type="STRING" size="256"/><Column id="Category" type="STRING" size="256"/><Column id="BuyingPrice" type="STRING" size="256"/><Column id="Contact" type="STRING" size="256"/><Column id="Email" type="STRING" size="256"/><Column id="Type" type="STRING" size="256"/><Column id="OnTheWay" type="STRING" size="256"/></ColumnInfo></Dataset></Objects>
+<Objects><Dataset id="dsSuppliers" onrowsetchanged="onSuppliersChanged"><ColumnInfo><Column id="SupplierID" type="STRING" size="1024"/><Column id="SupplierName" type="STRING" size="1024"/><Column id="Product" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Contact" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="OnTheWay" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSearch"><ColumnInfo><Column id="Search" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="Page" type="STRING" size="1024"/><Column id="PageSize" type="STRING" size="1024"/><Column id="SortField" type="STRING" size="1024"/><Column id="SortOrder" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsLogout"><ColumnInfo><Column id="SessionToken" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSupplierSummary" onrowsetchanged="onSupplierSummaryChanged"><ColumnInfo><Column id="TotalSuppliers" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
-
-this.query=""; this.typeFilter=""; this.page=0; this.pageSize=12;
-this.onLoad = function() { this.gfnSeed(); this.refresh(); };
+this.page = 0;
+this.pageSize = 12;
+this.query = "";
+this.typeFilter = "";
+this.sortField = "SupplierName";
+this.sortOrder = "ASC";
+this.onLoad = function() {
+  if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
+  this.refresh();
+};
 this.onNavInventoryList = function() { this.gfnNavigate("InventoryList"); };
 this.onNavSupplierList = function() {};
-this.onComingSoon = function() { this.gfnMessage("This section is outside the current requirements."); };
-this.onDownload = function() { this.gfnMessage("Export will be connected when the supplier API is ready."); };
-this.onPrev = function() { if(this.page>0){this.page--;this.refresh();} };
-this.onNext = function() { if((this.page+1)*this.pageSize<this.filteredCount){this.page++;this.refresh();} };
-this.onLogout = function() { this.gfnNavigate("Login"); };
+this.onLogout = function() {
+  this.gfnLogout();
+};
+this.onComingSoon = function() { this.gfnMessage("This section is not part of the inventory requirements."); };
 this.refresh = function() {
-  this.dsSuppliers.clearData();
-  var rows=nexacro.getApplication().inventorySuppliers, filtered=[];
-  for(var i=0;i<rows.length;i++) {
-    var s=rows[i];
-    if(this.query && (s.SupplierName+" "+s.Product).toLowerCase().indexOf(this.query)<0)continue;
-    if(this.typeFilter && s.Type!=this.typeFilter)continue;
-    filtered.push(s);
-  }
-  this.filteredCount=filtered.length;
-  var pages=Math.max(1,Math.ceil(filtered.length/this.pageSize));
-  if(this.page>=pages)this.page=pages-1;
-  for(var j=this.page*this.pageSize;j<Math.min(filtered.length,(this.page+1)*this.pageSize);j++) {
-    var row=this.dsSuppliers.addRow(), item=filtered[j];
-    for(var k in item)if(this.dsSuppliers.getColumnInfo(k))this.dsSuppliers.setColumn(row,k,item[k]);
-  }
-  this.staCount.set_text("Page "+(this.page+1)+" of "+pages);
+  var row = this.gfnBindRecord(this.dsSearch, {});
+  this.dsSearch.setColumn(row, "Search", this.query);
+  this.dsSearch.setColumn(row, "Type", this.typeFilter);
+  this.dsSearch.setColumn(row, "Page", String(this.page));
+  this.dsSearch.setColumn(row, "PageSize", String(this.pageSize));
+  this.dsSearch.setColumn(row, "SortField", this.sortField);
+  this.dsSearch.setColumn(row, "SortOrder", this.sortOrder);
+  this.gfnTransaction("suppliers-search", "suppliers/search", "dsSearch=dsSearch",
+    "dsSuppliers=dsSuppliers dsSupplierSummary=dsSupplierSummary", "", "onSuppliersLoaded");
 };
-this.onSearch = function() { this.query=String(this.edtSearch.value||"").toLowerCase();this.page=0;this.refresh(); };
-this.onFilter = function() { var a=["","Taking return","Not taking return"];this.typeFilter=a[(a.indexOf(this.typeFilter)+1)%a.length];this.btnFilter.set_text(this.typeFilter||"Filters");this.page=0;this.refresh(); };
-this.onSort = function(obj,e) {
-  var fields=["SupplierName","Product","Contact","Email","Type","OnTheWay"];
-  var key=fields[e.cell]; if(!key)return;
-  this.sortDesc=(this.sortField==key&&!this.sortDesc);
-  this.sortField=key;
-  this.dsSuppliers.set_keystring("S:"+(this.sortDesc?"-":"+")+key);
+this.onSuppliersLoaded = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.refreshPageLabel();
 };
-this.onAdd = function() { this.gfnPopup("SupplierForm",500,730,"onSupplierSaved"); };
-this.onSupplierSaved = function(id,value) { if(!value)return;try{nexacro.getApplication().inventorySuppliers.push(JSON.parse(value));this.refresh();}catch(e){this.gfnMessage("Could not read supplier data.");} };
-
+this.refreshPageLabel = function() {
+  var total = this.dsSupplierSummary.rowcount ? Number(this.dsSupplierSummary.getColumn(0, "TotalSuppliers")) : 0;
+  var pages = Math.max(1, Math.ceil(total / this.pageSize));
+  this.staCount.set_text(total + " suppliers · Page " + (this.page + 1) + " of " + pages);
+};
+this.onSuppliersChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
+      e.reason === nexacro.Dataset.REASON_MERGE) this.refreshPageLabel();
+};
+this.onSupplierSummaryChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
+      e.reason === nexacro.Dataset.REASON_MERGE) this.refreshPageLabel();
+};
+this.onSearch = function() {
+  this.query = String(this.edtSearch.value || "").toLowerCase();
+  this.page = 0;
+  this.refresh();
+};
+this.onFilter = function() {
+  var filters = ["", "Taking return", "Not taking return"];
+  this.typeFilter = filters[(filters.indexOf(this.typeFilter) + 1) % filters.length];
+  this.btnFilter.set_text(this.typeFilter || "Filters");
+  this.page = 0;
+  this.refresh();
+};
+this.onSort = function(obj, e) {
+  var fields = ["SupplierName", "Product", "Contact", "Email", "Type", "OnTheWay"];
+  if (!e || e.cell < 0 || !fields[e.cell]) return;
+  var field = fields[e.cell];
+  this.sortOrder = this.sortField === field && this.sortOrder === "ASC" ? "DESC" : "ASC";
+  this.sortField = field;
+  this.page = 0;
+  this.refresh();
+};
+this.onPrev = function() { if (this.page > 0) { this.page--; this.refresh(); } };
+this.onNext = function() {
+  var total = this.dsSupplierSummary.rowcount ? Number(this.dsSupplierSummary.getColumn(0, "TotalSuppliers")) : 0;
+  if ((this.page + 1) * this.pageSize < total) { this.page++; this.refresh(); }
+};
+this.onAdd = function() { this.gfnPopup("SupplierForm", 500, 730, "onSupplierSaved"); };
+this.onSupplierSaved = function(serviceId, value) { if (value) this.refresh(); };
+this.onDownload = function() {
+  this.gfnDownload("suppliers/export.csv", "suppliers.csv", { search: this.query, type: this.typeFilter });
+};
 ]]></Script></Form></FDL>
