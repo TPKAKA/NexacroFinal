@@ -67,6 +67,14 @@ if detail.find('.//Layouts//ImageViewer[@id="staImage"]') is None:
 if not any(binding.get('compid') == 'staImage' and binding.get('propid') == 'image'
            for binding in detail.findall('./Bind/BindItem')):
     errors.append('ProductDetail.xfdl: product image is not Dataset-bound')
+inventory = ET.parse(root / 'forms' / 'InventoryList.xfdl').getroot().find('./Form')
+summary_dataset = next((dataset for dataset in inventory.findall('./Objects/Dataset')
+                        if dataset.get('id') == 'dsSummary'), None)
+if summary_dataset is None or summary_dataset.find('./ColumnInfo/Column[@id="FilteredProducts"]') is None:
+    errors.append('InventoryList.xfdl: filtered product count is missing from dsSummary')
+inventory_script = inventory.find('./Script').text or ''
+if 'getColumn(0, "FilteredProducts")' not in inventory_script:
+    errors.append('InventoryList.xfdl: pagination must use the filtered product count')
 common_script = (root / 'lib' / 'InventoryCommon.xjs').read_text(encoding='utf-8')
 if '@param' not in common_script or '@returns' not in common_script:
     errors.append('InventoryCommon.xjs: public common functions need jsDoc')

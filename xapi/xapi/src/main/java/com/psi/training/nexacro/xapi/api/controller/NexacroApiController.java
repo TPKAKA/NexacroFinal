@@ -132,6 +132,9 @@ public class NexacroApiController {
         List<Map<String, Object>> rows = jdbc.query(
             select + where + " ORDER BY p.product_name, p.product_id LIMIT ? OFFSET ?",
             productMapper(), query, pattern, pattern, pattern, status, status, pageSize, page * pageSize);
+        Integer filteredProducts = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM products p" + where,
+            Integer.class, query, pattern, pattern, pattern, status, status);
         Map<String, Object> summary = jdbc.queryForMap(
             "SELECT COUNT(*) AS total, COUNT(DISTINCT category) AS categories, "
                 + "SUM(CASE WHEN quantity > 0 AND quantity <= threshold THEN 1 ELSE 0 END) AS low_count, "
@@ -139,6 +142,7 @@ public class NexacroApiController {
         Map<String, Object> summaryRow = row(
             "Categories", text(summary.get("categories")),
             "TotalProducts", text(summary.get("total")),
+            "FilteredProducts", String.valueOf(filteredProducts),
             "TopSelling", "—",
             "LowStocks", text(summary.get("low_count")),
             "OutOfStock", text(summary.get("out_count")),
@@ -146,7 +150,7 @@ public class NexacroApiController {
         return NexacroProtocol.success(
             NexacroProtocol.table("dsProducts", PRODUCT_COLUMNS, rows),
             NexacroProtocol.table("dsSummary",
-                List.of("Categories", "TotalProducts", "TopSelling", "LowStocks", "OutOfStock", "TopSellingNote"),
+                List.of("Categories", "TotalProducts", "FilteredProducts", "TopSelling", "LowStocks", "OutOfStock", "TopSellingNote"),
                 List.of(summaryRow)));
     }
 

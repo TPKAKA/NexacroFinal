@@ -88,7 +88,14 @@ class InventoryApiIntegrationTest {
         assertSuccess(products);
         assertThat(datasetRows(products, "dsProducts")).hasSize(5);
         assertThat(datasetRow(products, "dsSummary").path("TotalProducts").asText()).isEqualTo("5");
+        assertThat(datasetRow(products, "dsSummary").path("FilteredProducts").asText()).isEqualTo("5");
         assertThat(datasetRow(products, "dsSummary").path("LowStocks").asText()).isEqualTo("1");
+
+        JsonNode secondProductPage = postDataset("/api/products/search", "dsSearch",
+            row("Search", "", "Status", "", "Page", "1", "PageSize", "2"), token);
+        assertSuccess(secondProductPage);
+        assertThat(datasetRows(secondProductPage, "dsProducts")).hasSize(2);
+        assertThat(datasetRow(secondProductPage, "dsSummary").path("FilteredProducts").asText()).isEqualTo("5");
 
         JsonNode detail = postDataset("/api/products/detail", "dsRequest", row("ProductID", "PRD-002"), token);
         assertSuccess(detail);
@@ -118,6 +125,13 @@ class InventoryApiIntegrationTest {
         assertSuccess(filtered);
         assertThat(datasetRows(filtered, "dsProducts")).hasSize(1);
         assertThat(datasetRow(filtered, "dsProducts").path("ProductID").asText()).isEqualTo(productId);
+        assertThat(datasetRow(filtered, "dsSummary").path("FilteredProducts").asText()).isEqualTo("1");
+
+        JsonNode filteredPastEnd = postDataset("/api/products/search", "dsSearch",
+            row("Search", "test cable", "Status", "Low stock", "Page", "1", "PageSize", "10"), token);
+        assertSuccess(filteredPastEnd);
+        assertThat(datasetRows(filteredPastEnd, "dsProducts")).isEmpty();
+        assertThat(datasetRow(filteredPastEnd, "dsSummary").path("FilteredProducts").asText()).isEqualTo("1");
 
         Map<String, String> newSupplier = row(
             "SupplierName", "Test Source " + nonce, "Product", "Test Cable", "Category", "Electronics",

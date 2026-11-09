@@ -42,7 +42,7 @@
 <Static id="staPage" left="805" top="868" width="365" height="28" text="" cssclass="pageLabel"/>
 <Button id="btnNext" left="1300" top="865" width="92" height="35" text="Next" cssclass="secondary" onclick="onNext"/>
 </Layout></Layouts>
-<Objects><Dataset id="dsProducts" onrowsetchanged="onProductsChanged"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSearch"><ColumnInfo><Column id="Search" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/><Column id="Page" type="STRING" size="1024"/><Column id="PageSize" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsLogout"><ColumnInfo><Column id="SessionToken" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSummary" onrowsetchanged="onSummaryChanged" onload="onSummaryLoaded"><ColumnInfo><Column id="Categories" type="STRING" size="1024"/><Column id="TotalProducts" type="STRING" size="1024"/><Column id="TopSelling" type="STRING" size="1024"/><Column id="LowStocks" type="STRING" size="1024"/><Column id="OutOfStock" type="STRING" size="1024"/><Column id="TopSellingNote" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
+<Objects><Dataset id="dsProducts" onrowsetchanged="onProductsChanged"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSearch"><ColumnInfo><Column id="Search" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/><Column id="Page" type="STRING" size="1024"/><Column id="PageSize" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsLogout"><ColumnInfo><Column id="SessionToken" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSummary" onrowsetchanged="onSummaryChanged" onload="onSummaryLoaded"><ColumnInfo><Column id="Categories" type="STRING" size="1024"/><Column id="TotalProducts" type="STRING" size="1024"/><Column id="FilteredProducts" type="STRING" size="1024"/><Column id="TopSelling" type="STRING" size="1024"/><Column id="LowStocks" type="STRING" size="1024"/><Column id="OutOfStock" type="STRING" size="1024"/><Column id="TopSellingNote" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.page = 0;
 this.pageSize = 10;
@@ -74,7 +74,7 @@ this.onProductsLoaded = function(serviceId, errorCode, errorMessage) {
 };
 this.refreshPageLabel = function() {
   var count = this.dsProducts.rowcount;
-  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "TotalProducts")) : 0;
+  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
   var start = count ? this.page * this.pageSize + 1 : 0;
   var end = this.page * this.pageSize + count;
   this.staPage.set_text("Showing " + start + "–" + end + " of " + total + " products");
@@ -118,7 +118,7 @@ this.onFilter = function() {
 };
 this.onPrev = function() { if (this.page > 0) { this.page--; this.refresh(); } };
 this.onNext = function() {
-  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "TotalProducts")) : 0;
+  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
   if ((this.page + 1) * this.pageSize < total) { this.page++; this.refresh(); }
 };
 this.onOpenProduct = function(obj, e) {

@@ -58,6 +58,6 @@ cd xapi/xapi
 mvn test
 ```
 
-The backend integration tests use an isolated in-memory H2 database and exercise authentication, Dataset JSON, product/supplier transactions, filtering, details, export, upload, validation, and logout.
+The protocol unit tests cover Nexacro Dataset parsing, case-insensitive values, and success/error response layouts, including empty Datasets. The backend integration tests use an isolated in-memory H2 database and exercise authentication, Dataset JSON, product/supplier transactions, filtering, details, export, upload, validation, and logout.
 
 Password recovery currently returns instructions to contact the workspace administrator; no mail delivery service is configured.

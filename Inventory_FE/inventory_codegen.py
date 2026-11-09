@@ -424,7 +424,7 @@ this.onProductsLoaded = function(serviceId, errorCode, errorMessage) {
 };
 this.refreshPageLabel = function() {
   var count = this.dsProducts.rowcount;
-  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "TotalProducts")) : 0;
+  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
   var start = count ? this.page * this.pageSize + 1 : 0;
   var end = this.page * this.pageSize + count;
   this.staPage.set_text("Showing " + start + "–" + end + " of " + total + " products");
@@ -468,7 +468,7 @@ this.onFilter = function() {
 };
 this.onPrev = function() { if (this.page > 0) { this.page--; this.refresh(); } };
 this.onNext = function() {
-  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "TotalProducts")) : 0;
+  var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
   if ((this.page + 1) * this.pageSize < total) { this.page++; this.refresh(); }
 };
 this.onOpenProduct = function(obj, e) {
@@ -847,7 +847,7 @@ def finalize(root):
             ("dsSearch", ["Search", "Status", "Page", "PageSize"], None),
             ("dsProducts", PRODUCT_COLUMNS, "onProductsChanged"),
             ("dsLogout", ["SessionToken"], None),
-          ("dsSummary", ["Categories", "TotalProducts", "TopSelling", "LowStocks", "OutOfStock", "TopSellingNote"],
+          ("dsSummary", ["Categories", "TotalProducts", "FilteredProducts", "TopSelling", "LowStocks", "OutOfStock", "TopSellingNote"],
            {"onrowsetchanged": "onSummaryChanged", "onload": "onSummaryLoaded"}),
         ],
         "ProductForm.xfdl": [
