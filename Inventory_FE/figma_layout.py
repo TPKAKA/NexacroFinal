@@ -226,7 +226,7 @@ def detail(root):
               c('Static','staSupplier',354,605,580,85,'','detailBody'),
               c('Static','staStockTitle',354,720,430,35,'Stock Locations','sectionTitleSmall'),
               c('Static','staStock',354,762,610,95,'Location data will be available from the API.','stockTable'),
-              c('Static','staImage',1150,266,170,190,'PRODUCT IMAGE','imagePlaceholder'),
+              c('ImageViewer','staImage',1150,266,170,190,'','imagePlaceholder',image=''),
               c('Static','staStatus',1040,490,260,35,'','status'),
               c('Static','staTab',980,540,360,90,'Product overview','muted'),
               c('Button','btnBack',330,865,160,35,'← Back to inventory','secondary','onBack')]
@@ -286,7 +286,7 @@ def apply(root):
 .FileUpload.uploadPicker { color:#1E6FD9; font:12px "Segoe UI"; }
 .Static.detailBody { color:#626C78; font:14px "Segoe UI"; }
 .Static.stockTable { background:#F8F9FB; color:#626C78; -nexa-border:1px solid #EEF0F2; font:13px "Segoe UI"; }
-.Static.imagePlaceholder { background:#F7F8FA; color:#9FA8B3; -nexa-border:1px dashed #DDE2E8; -nexa-text-align:center; font:13px "Segoe UI"; }
+.ImageViewer.imagePlaceholder { background:#F7F8FA; -nexa-border:1px dashed #DDE2E8; }
 .Static.status { color:#29A46B; font:14px "Segoe UI"; }
 .Button.tab { background:#FFFFFF; color:#7D8793; -nexa-border:0px none; font:14px "Segoe UI"; }
 .Button.tabActive { background:#FFFFFF; color:#2C6EB6; -nexa-border:0px none; font:600 14px "Segoe UI"; }

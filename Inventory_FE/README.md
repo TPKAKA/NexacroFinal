@@ -11,7 +11,7 @@ python build_frontend.py
 python validate_frontend.py
 ```
 
-The checked-in `.xfdl`, `.xjs`, `.xcss`, `.xadl`, and `.xml` files are the Nexacro source files. `build_frontend.py` recreates the seven forms from the generator and applies the common Dataset definitions, bindings, event handlers, services, and layout.
+The checked-in `.xfdl`, `.xjs`, `.xcss`, `.xadl`, and `.xml` files are the Nexacro source files. `build_frontend.py` recreates the seven forms from the generator and applies the common Dataset definitions, bindings, event handlers, services, and layout. Edit the generator files (`build_frontend.py`, `figma_layout.py`, and `inventory_codegen.py`) when changing generated forms, then rebuild and validate so source and generated output stay aligned.
 
 ## Run the API
 
@@ -31,14 +31,18 @@ $env:SPRING_PROFILES_ACTIVE = "prod"
 $env:DB_URL = "jdbc:postgresql://localhost:5432/nexacro_inventory"
 $env:DB_USERNAME = "postgres"
 $env:DB_PASSWORD = "your-local-password"
+# Public origin used in returned image URLs. Set this to the API's reachable HTTPS origin in deployment.
+$env:APP_PUBLIC_BASE_URL = "http://localhost:8080"
+# Comma-separated Nexacro WRE origins allowed to call the API.
+$env:APP_CORS_ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*"
 mvn spring-boot:run
 ```
 
-`schema.sql` creates the required tables and indexes. The `prod` profile does not insert demo records. PostgreSQL credentials belong in environment variables and must not be committed.
+`schema.sql` creates the required tables and indexes. The `prod` profile does not insert demo records. PostgreSQL connections initialize their session timezone to UTC; the pool connection timeout is 10 seconds and SQL statements time out after 25 seconds. Nexacro transactions wait up to 30 seconds and do not automatically retry, preventing an uncertain write from being replayed. PostgreSQL credentials belong in environment variables and must not be committed.
 
 ## Connect the Nexacro project
 
-`Inventory_FE/typedefinition.xml` defines the `api` service at `http://localhost:8080/api/`. Start the API before previewing the app in Nexacro Studio. If the API is hosted elsewhere, update the service URL in `typedefinition.xml`.
+`Inventory_FE/typedefinition.xml` defines the `api` service at `http://localhost:8080/api/`. Start the API before previewing the app in Nexacro Studio. If the API is hosted elsewhere, update the service URL in `typedefinition.xml`. The Application enables `checkversion` and starts at version `1.0.0`; increment the Application and `theme`, `xcssrc`, `forms`, and `lib` service versions together when publishing changed frontend assets so WRE clients fetch the new files. The API service uses `cachelevel="none"` because its data changes during normal use. Shared code values are cached in memory for one application session and cleared when the session ends.
 
 The frontend sends Nexacro Dataset JSON through `Form.transaction` with data type `3`. The API returns Nexacro JSON envelopes with `ErrorCode`, `ErrorMsg`, and stable Dataset `ColumnInfo` layouts. Shared code in `lib/InventoryCommon.xjs` provides validation, Dataset binding, common codes, messages, navigation, popups, transactions, file transfer, error handling, and logout.
 

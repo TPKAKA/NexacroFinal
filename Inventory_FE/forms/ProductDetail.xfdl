@@ -31,7 +31,7 @@
 <Static id="staSupplier" left="354" top="605" width="580" height="85" text="" cssclass="detailBody"/>
 <Static id="staStockTitle" left="354" top="720" width="430" height="35" text="Stock Locations" cssclass="sectionTitleSmall"/>
 <Grid id="grdStockLocations" binddataset="dsStockLocations" left="354" top="762" width="610" height="95" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="292"/><Column size="158"/><Column size="160"/></Columns><Rows><Row size="36" band="head"/><Row size="32"/></Rows><Band id="head"><Cell col="0" text="Location"/><Cell col="1" text="Quantity"/><Cell col="2" text="Unit"/></Band><Band id="body"><Cell col="0" text="bind:Location"/><Cell col="1" text="bind:Quantity"/><Cell col="2" text="bind:Unit"/></Band></Format></Formats></Grid>
-<Static id="staImage" left="1150" top="266" width="170" height="190" text="PRODUCT IMAGE" cssclass="imagePlaceholder"/>
+<ImageViewer id="staImage" left="1150" top="266" width="170" height="190" text="" cssclass="imagePlaceholder" image=""/>
 <Static id="staStatus" left="1040" top="490" width="260" height="35" text="" cssclass="status"/>
 <Static id="staTab" left="980" top="540" width="360" height="90" text="Product overview" cssclass="muted"/>
 <Button id="btnBack" left="330" top="865" width="160" height="35" text="← Back to inventory" cssclass="secondary" onclick="onBack"/>

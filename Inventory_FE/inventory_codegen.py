@@ -118,15 +118,35 @@ def finalize_detail_layout(path):
 
 
 COMMON_SCRIPT = r"""
+/**
+ * Check whether a value is empty after trimming whitespace.
+ * @param {*} value Value to inspect.
+ * @returns {boolean} True when the value is null, undefined, or blank.
+ */
 this.gfnEmpty = function(value) {
   return value === null || value === undefined || String(value).replace(/^\s+|\s+$/g, "") === "";
 };
+/**
+ * Check the basic structure of an email address before submission.
+ * @param {*} value Address to validate.
+ * @returns {boolean} True when the address has a local part and domain.
+ */
 this.gfnEmail = function(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 };
+/**
+ * Validate a non-negative numeric input.
+ * @param {*} value Value to validate.
+ * @returns {boolean} True when value is present and numeric.
+ */
 this.gfnNumber = function(value) {
   return !this.gfnEmpty(value) && !isNaN(Number(value)) && Number(value) >= 0;
 };
+/**
+ * Validate a real calendar date formatted as YYYY-MM-DD.
+ * @param {*} value Date string to validate.
+ * @returns {boolean} True when the date exists in the Gregorian calendar.
+ */
 this.gfnDate = function(value) {
   var text = String(value || "").replace(/^\s+|\s+$/g, "");
   var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
@@ -139,10 +159,27 @@ this.gfnDate = function(value) {
   var daysByMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return day >= 1 && day <= daysByMonth[month - 1];
 };
+/**
+ * Show a Nexacro alert message.
+ * @param {string} message Text displayed to the user.
+ * @returns {void}
+ */
 this.gfnMessage = function(message) { this.alert(message); };
+/**
+ * Navigate the current owner frame to a registered form.
+ * @param {string} name Form service name without the .xfdl suffix.
+ * @returns {void}
+ */
 this.gfnNavigate = function(name) {
   this.getOwnerFrame().set_formurl("forms::" + name + ".xfdl");
 };
+/**
+ * Set a Dataset's first row from a plain object, adding a row if needed.
+ * Only columns defined by the Dataset are copied.
+ * @param {nexacro.Dataset} dataset Target Dataset.
+ * @param {Object<string, *>} values Values keyed by Dataset column id.
+ * @returns {number} Row index updated.
+ */
 this.gfnBindRecord = function(dataset, values) {
   var row = dataset.rowcount ? 0 : dataset.addRow();
   for (var key in values) {
@@ -151,9 +188,42 @@ this.gfnBindRecord = function(dataset, values) {
   dataset.rowposition = row;
   return row;
 };
+/**
+ * Load shared codes into this form's dsCodes Dataset.
+ * Successful responses are cached in memory for the current application session.
+ * @param {string} callback Form callback name.
+ * @returns {*} Transaction handle, or null when the cached Dataset is used.
+ */
 this.gfnLoadCodes = function(callback) {
-  this.gfnTransaction("common-codes", "codes/list", "", "dsCodes=dsCodes", "", callback || "onCodesLoaded");
+  var app = nexacro.getApplication();
+  if (app.inventoryCodeCache && this.dsCodes) {
+    this.dsCodes.loadXML(app.inventoryCodeCache, true);
+    var handler = callback || "onCodesLoaded";
+    if (typeof this[handler] === "function") this[handler]("common-codes-cache", 0, "");
+    return null;
+  }
+  return this.gfnTransaction("common-codes", "codes/list", "", "dsCodes=dsCodes", "", callback || "onCodesLoaded");
 };
+/**
+ * Cache a non-empty common-code Dataset for this application session.
+ * @returns {boolean} True when a Dataset was stored.
+ */
+this.gfnCacheCodes = function() {
+  if (!this.dsCodes || this.dsCodes.rowcount < 1) return false;
+  nexacro.getApplication().inventoryCodeCache = this.dsCodes.saveXML();
+  return true;
+};
+/**
+ * Send one Nexacro Dataset transaction to the API service.
+ * Dataset JSON is used with bCompress=false; this setting is compression only and does not encrypt traffic.
+ * @param {string} id Unique transaction id.
+ * @param {string} path API path relative to api::.
+ * @param {string} input Input Dataset mapping.
+ * @param {string} output Output Dataset mapping.
+ * @param {string} args Nexacro transaction arguments.
+ * @param {string} callback Form callback name.
+ * @returns {*} Nexacro transaction handle.
+ */
 this.gfnTransaction = function(id, path, input, output, args, callback) {
   var app = nexacro.getApplication();
   var parameters = String(args || "");
@@ -163,6 +233,14 @@ this.gfnTransaction = function(id, path, input, output, args, callback) {
   return this.transaction(id, "api::" + path, input || "", output || "", parameters,
                           callback || "onTransaction", true, 3, false);
 };
+/**
+ * Open a modal child form from the forms service.
+ * @param {string} name Form service name.
+ * @param {number} width Popup width in pixels.
+ * @param {number} height Popup height in pixels.
+ * @param {string} callback Parent form callback name.
+ * @returns {void}
+ */
 this.gfnPopup = function(name, width, height, callback) {
   var child = new ChildFrame("popup" + name, 0, 0, width, height);
   child.formurl = "forms::" + name + ".xfdl";
@@ -171,6 +249,13 @@ this.gfnPopup = function(name, width, height, callback) {
   child.dragmovetype = "all";
   child.showModal(this.getOwnerFrame(), {}, this, callback);
 };
+/**
+ * Download a protected file through a Nexacro FileDownTransfer.
+ * @param {string} path API path relative to api::.
+ * @param {string} filename Local filename.
+ * @param {Object<string, string>} parameters Additional POST parameters.
+ * @returns {void}
+ */
 this.gfnDownload = function(path, filename, parameters) {
   var app = nexacro.getApplication();
   if (!app.sessionToken) {
@@ -193,6 +278,12 @@ this.gfnDownload = function(path, filename, parameters) {
   }
   transfer.download("api::" + path);
 };
+/**
+ * Display an API error and return to login when the session has expired.
+ * @param {number} errorCode Nexacro transaction error code.
+ * @param {string} errorMessage Server-provided error message.
+ * @returns {void}
+ */
 this.gfnHandleApiError = function(errorCode, errorMessage) {
   var message = String(errorMessage || "The request could not be completed.");
   this.gfnMessage(message);
@@ -200,9 +291,14 @@ this.gfnHandleApiError = function(errorCode, errorMessage) {
     var app = nexacro.getApplication();
     app.sessionToken = "";
     app.currentUserName = "";
+    app.inventoryCodeCache = "";
     this.gfnNavigate("Login");
   }
 };
+/**
+ * Close the server session and clear the application session state.
+ * @returns {*} Transaction handle, or undefined when no session exists.
+ */
 this.gfnLogout = function() {
   var app = nexacro.getApplication();
   if (!app.sessionToken) {
@@ -222,6 +318,7 @@ this.onLogoutResult = function(serviceId, errorCode, errorMessage) {
   }
   app.sessionToken = "";
   app.currentUserName = "";
+  app.inventoryCodeCache = "";
   app.selectedProductId = "";
   app.editProductId = "";
   this.gfnNavigate("Login");
@@ -491,7 +588,8 @@ this.onLoad = function() {
   }
 };
 this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
-  if (errorCode < 0) return;
+  if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnCacheCodes();
   this.dsCategory.clearData();
   this.dsUnit.clearData();
   for (var i = 0; i < this.dsCodes.rowcount; i++) {
@@ -576,7 +674,8 @@ this.onLoad = function() {
   this.gfnLoadCodes("onSupplierCodesLoaded");
 };
 this.onSupplierCodesLoaded = function(serviceId, errorCode, errorMessage) {
-  if (errorCode < 0) return;
+  if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnCacheCodes();
   this.dsCategory.clearData();
   this.dsType.clearData();
   for (var i = 0; i < this.dsCodes.rowcount; i++) {
@@ -843,9 +942,41 @@ def finalize(root):
     adl = adl.replace('width="1440" height="800" titletext="KANBAN | Inventory Management"',
                       'width="1440" height="960" titletext="KANBAN | Inventory Management"')
     app_script = '<Script type="xscript5.1"><![CDATA[this.sessionToken = ""; this.currentUserName = ""; '
-    app_script += 'this.selectedProductId = ""; this.editProductId = "";]]></Script>'
+    app_script += 'this.selectedProductId = ""; this.editProductId = ""; this.inventoryCodeCache = "";]]></Script>'
     adl = re.sub(r'<Script type="xscript5\.1"><!\[CDATA\[.*?\]\]></Script>', app_script, adl, count=1, flags=re.S)
+    app_tag = re.search(r'<Application\b[^>]*>', adl)
+    if app_tag:
+        normalized = re.sub(r'\s+(?:checkversion|version)="[^"]*"', '', app_tag.group(0))
+        normalized = normalized[:-1] + ' checkversion="true" version="1.0.0">'
+        adl = adl[:app_tag.start()] + normalized + adl[app_tag.end():]
     application.write_text(adl, encoding="utf-8")
+
+    environment = root / "environment.xml"
+    env_xml = environment.read_text(encoding="utf-8")
+    env_tag = re.search(r'<Environment\b[^>]*>', env_xml)
+    if env_tag:
+        normalized = re.sub(r'\s+(?:httptimeout|httpretry)="[^"]*"', '', env_tag.group(0))
+        normalized = normalized[:-1] + ' httptimeout="30" httpretry="0">'
+        env_xml = env_xml[:env_tag.start()] + normalized + env_xml[env_tag.end():]
+        environment.write_text(env_xml, encoding="utf-8")
+
+    config = typedefinition.read_text(encoding="utf-8")
+    if 'id="ImageViewer"' not in config:
+        config = config.replace(
+            '<Component type="JavaScript" id="Static" classname="nexacro.Static"/>',
+            '<Component type="JavaScript" id="Static" classname="nexacro.Static"/>'
+            '<Component type="JavaScript" id="ImageViewer" classname="nexacro.ImageViewer"/>',
+        )
+    for prefix in ("theme", "xcssrc", "forms", "lib"):
+        config = re.sub(
+            rf'(<Service\b(?=[^>]*\bprefixid="{prefix}")[^>]*\bversion=")[^"]*(")',
+            r'\g<1>1.0.0\2', config,
+        )
+    config = re.sub(
+        r'(<Service\b(?=[^>]*\bprefixid="api")[^>]*\bversion=")[^"]*(")',
+        r'\g<1>0\2', config,
+    )
+    typedefinition.write_text(config, encoding="utf-8")
 
 
 if __name__ == "__main__":

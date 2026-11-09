@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ENV version="2.1"><Environment datatyperule="2.0" filesecurelevel="all" themeid="theme::inventory"><ScreenDefinition><Screen id="Desktop_screen" type="desktop" themeid="theme::inventory"/></ScreenDefinition><Variables/><Cookies/><httpheader/></Environment><Script type="xscript5.1"><![CDATA[]]></Script></ENV>
+<ENV version="2.1"><Environment datatyperule="2.0" filesecurelevel="all" themeid="theme::inventory" httptimeout="30" httpretry="0"><ScreenDefinition><Screen id="Desktop_screen" type="desktop" themeid="theme::inventory"/></ScreenDefinition><Variables/><Cookies/><httpheader/></Environment><Script type="xscript5.1"><![CDATA[]]></Script></ENV>

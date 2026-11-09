@@ -34,7 +34,8 @@ this.onLoad = function() {
   this.gfnLoadCodes("onSupplierCodesLoaded");
 };
 this.onSupplierCodesLoaded = function(serviceId, errorCode, errorMessage) {
-  if (errorCode < 0) return;
+  if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnCacheCodes();
   this.dsCategory.clearData();
   this.dsType.clearData();
   for (var i = 0; i < this.dsCodes.rowcount; i++) {
