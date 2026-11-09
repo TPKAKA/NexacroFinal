@@ -11,24 +11,45 @@
 <Edit id="edtEmail" left="825" top="470" width="360" height="45" cssclass="field" displaynulltext="Enter your email"/>
 <Static id="staPassword" left="825" top="535" width="360" height="23" text="Password" cssclass="fieldLabel"/>
 <Edit id="edtPassword" left="825" top="563" width="360" height="45" cssclass="field" password="true"/>
-<CheckBox id="chkRemember" left="825" top="632" width="218" height="28" text="Remember for 30 days"/>
+<CheckBox id="chkRemember" left="825" top="632" width="218" height="28" text="Remember for 30 days" truevalue="1" falsevalue="0"/>
 <Button id="btnForgot" left="1050" top="632" width="135" height="28" text="Forgot password" cssclass="link" onclick="onForgot"/>
 <Button id="btnLogin" left="825" top="684" width="360" height="46" text="Sign in" cssclass="primary" onclick="onLogin"/>
 <Static id="staSignUpHint" left="883" top="747" width="225" height="25" text="Don't have an account?" cssclass="muted"/>
 <Button id="btnSignUp" left="1082" top="747" width="103" height="25" text="Sign up" cssclass="link" onclick="onSignUp"/>
 </Layout></Layouts>
-<Objects></Objects>
+<Objects><Dataset id="dsLogin" onrowsetchanged="onLoginDatasetChanged"><ColumnInfo><Column id="Email" type="STRING" size="1024"/><Column id="Password" type="STRING" size="1024"/><Column id="RememberMe" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSession"><ColumnInfo><Column id="UserID" type="STRING" size="1024"/><Column id="Name" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Token" type="STRING" size="1024"/><Column id="ExpiresAt" type="STRING" size="1024"/><Column id="RememberMe" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsForgot"><ColumnInfo><Column id="Email" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsResult"><ColumnInfo><Column id="Message" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
-
-this.onLoad = function() {};
+this.onLoad = function() {
+  this.gfnBindRecord(this.dsLogin, { Email: "", Password: "", RememberMe: "0" });
+  this.gfnBindRecord(this.dsForgot, { Email: "" });
+};
 this.onLogin = function() {
-  var email = this.edtEmail.value, password = this.edtPassword.value;
-  if (!this.gfnEmail(email)) return this.gfnMessage("Enter a valid email address.");
-  if (this.gfnEmpty(password)) return this.gfnMessage("Password is required.");
-  nexacro.getApplication().inventoryEmail = email;
+  var row = this.dsLogin.rowposition < 0 ? 0 : this.dsLogin.rowposition;
+  var email = this.dsLogin.getColumn(row, "Email");
+  var password = this.dsLogin.getColumn(row, "Password");
+  if (!this.gfnEmail(email) || this.gfnEmpty(password)) return this.gfnMessage("Enter a valid email and password.");
+  this.gfnTransaction("auth-login", "auth/login", "dsLogin=dsLogin", "dsSession=dsSession", "", "onLoginResult");
+};
+this.onLoginResult = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0 || !this.dsSession.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  var app = nexacro.getApplication();
+  app.sessionToken = this.dsSession.getColumn(0, "Token");
+  app.currentUserName = this.dsSession.getColumn(0, "Name");
   this.gfnNavigate("InventoryList");
 };
 this.onSignUp = function() { this.gfnNavigate("SignUp"); };
-this.onForgot = function() { this.gfnMessage("Password recovery will be available with the authentication API."); };
-
-]]></Script></Form></FDL>
+this.onForgot = function() {
+  var row = this.dsLogin.rowposition < 0 ? 0 : this.dsLogin.rowposition;
+  var email = this.dsLogin.getColumn(row, "Email");
+  if (!this.gfnEmail(email)) return this.gfnMessage("Enter your account email first.");
+  this.gfnBindRecord(this.dsForgot, { Email: email });
+  this.gfnTransaction("auth-forgot", "auth/forgot", "dsForgot=dsForgot", "dsResult=dsResult", "", "onForgotResult");
+};
+this.onForgotResult = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnMessage(this.dsResult.getColumn(0, "Message"));
+};
+this.onLoginDatasetChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_CHANGESTATUS) this.loginInputChanged = true;
+};
+]]></Script><Bind><BindItem id="bind0" compid="edtEmail" propid="value" datasetid="dsLogin" columnid="Email"/><BindItem id="bind1" compid="edtPassword" propid="value" datasetid="dsLogin" columnid="Password"/><BindItem id="bind2" compid="chkRemember" propid="value" datasetid="dsLogin" columnid="RememberMe"/></Bind></Form></FDL>

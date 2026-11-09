@@ -20,19 +20,32 @@
 <Static id="staBackHint" left="888" top="869" width="230" height="25" text="Already have an account?" cssclass="muted"/>
 <Button id="btnBack" left="1095" top="869" width="85" height="25" text="Log in" cssclass="link" onclick="onBack"/>
 </Layout></Layouts>
-<Objects></Objects>
+<Objects><Dataset id="dsSignup" onrowsetchanged="onSignupDatasetChanged"><ColumnInfo><Column id="Name" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Password" type="STRING" size="1024"/><Column id="Confirm" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSession"><ColumnInfo><Column id="UserID" type="STRING" size="1024"/><Column id="Name" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Token" type="STRING" size="1024"/><Column id="ExpiresAt" type="STRING" size="1024"/><Column id="RememberMe" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
-
-this.onLoad = function() {};
+this.onLoad = function() {
+  this.gfnBindRecord(this.dsSignup, { Name: "", Email: "", Password: "", Confirm: "" });
+};
 this.onCreate = function() {
-  var name = this.edtName.value, email = this.edtEmail.value;
-  var password = this.edtPassword.value, confirm = this.edtConfirm.value;
+  var row = this.dsSignup.rowposition < 0 ? 0 : this.dsSignup.rowposition;
+  var name = this.dsSignup.getColumn(row, "Name");
+  var email = this.dsSignup.getColumn(row, "Email");
+  var password = this.dsSignup.getColumn(row, "Password");
+  var confirm = this.dsSignup.getColumn(row, "Confirm");
   if (this.gfnEmpty(name)) return this.gfnMessage("Name is required.");
   if (!this.gfnEmail(email)) return this.gfnMessage("Enter a valid email address.");
   if (this.gfnEmpty(password) || password.length < 8) return this.gfnMessage("Password must have at least 8 characters.");
-  if (password != confirm) return this.gfnMessage("Passwords do not match.");
-  this.gfnMessage("Account creation requires the authentication API. The frontend validation is ready.");
+  if (password !== confirm) return this.gfnMessage("Passwords do not match.");
+  this.gfnTransaction("auth-signup", "auth/signup", "dsSignup=dsSignup", "dsSession=dsSession", "", "onSignupResult");
+};
+this.onSignupResult = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0 || !this.dsSession.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  var app = nexacro.getApplication();
+  app.sessionToken = this.dsSession.getColumn(0, "Token");
+  app.currentUserName = this.dsSession.getColumn(0, "Name");
+  this.gfnNavigate("InventoryList");
 };
 this.onBack = function() { this.gfnNavigate("Login"); };
-
-]]></Script></Form></FDL>
+this.onSignupDatasetChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_CHANGESTATUS) this.signupInputChanged = true;
+};
+]]></Script><Bind><BindItem id="bind0" compid="edtName" propid="value" datasetid="dsSignup" columnid="Name"/><BindItem id="bind1" compid="edtEmail" propid="value" datasetid="dsSignup" columnid="Email"/><BindItem id="bind2" compid="edtPassword" propid="value" datasetid="dsSignup" columnid="Password"/><BindItem id="bind3" compid="edtConfirm" propid="value" datasetid="dsSignup" columnid="Confirm"/></Bind></Form></FDL>

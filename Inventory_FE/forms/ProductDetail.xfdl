@@ -30,30 +30,70 @@
 <Static id="staSupplierTitle" left="354" top="560" width="430" height="35" text="Supplier Details" cssclass="sectionTitleSmall"/>
 <Static id="staSupplier" left="354" top="605" width="580" height="85" text="" cssclass="detailBody"/>
 <Static id="staStockTitle" left="354" top="720" width="430" height="35" text="Stock Locations" cssclass="sectionTitleSmall"/>
-<Static id="staStock" left="354" top="762" width="610" height="95" text="Location data will be available from the API." cssclass="stockTable"/>
-<Static id="staImage" left="1150" top="266" width="170" height="190" text="PRODUCT IMAGE" cssclass="imagePlaceholder"/>
+<Grid id="grdStockLocations" binddataset="dsStockLocations" left="354" top="762" width="610" height="95" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="292"/><Column size="158"/><Column size="160"/></Columns><Rows><Row size="36" band="head"/><Row size="32"/></Rows><Band id="head"><Cell col="0" text="Location"/><Cell col="1" text="Quantity"/><Cell col="2" text="Unit"/></Band><Band id="body"><Cell col="0" text="bind:Location"/><Cell col="1" text="bind:Quantity"/><Cell col="2" text="bind:Unit"/></Band></Format></Formats></Grid>
+<ImageViewer id="staImage" left="1150" top="266" width="170" height="190" text="" cssclass="imagePlaceholder" image=""/>
 <Static id="staStatus" left="1040" top="490" width="260" height="35" text="" cssclass="status"/>
 <Static id="staTab" left="980" top="540" width="360" height="90" text="Product overview" cssclass="muted"/>
 <Button id="btnBack" left="330" top="865" width="160" height="35" text="← Back to inventory" cssclass="secondary" onclick="onBack"/>
-</Layout></Layouts>
-<Objects></Objects>
+<Static id="staActivityTitle" left="972" top="560" width="420" height="35" text="Activity" cssclass="sectionTitleSmall"/><Grid id="grdActivities" binddataset="dsActivity" left="972" top="585" width="420" height="270" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="75"/><Column size="63"/><Column size="163"/><Column size="119"/></Columns><Rows><Row size="36" band="head"/><Row size="32"/></Rows><Band id="head"><Cell col="0" text="Type"/><Cell col="1" text="Change"/><Cell col="2" text="Description"/><Cell col="3" text="Created at"/></Band><Band id="body"><Cell col="0" text="bind:Type"/><Cell col="1" text="bind:QuantityChange"/><Cell col="2" text="bind:Description"/><Cell col="3" text="bind:CreatedAt"/></Band></Format></Formats></Grid></Layout></Layouts>
+<Objects><Dataset id="dsRequest"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsProduct"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsLogout"><ColumnInfo><Column id="SessionToken" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsProductDetail" onrowsetchanged="onProductDetailChanged"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductIDLabel" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierInfo" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/><Column id="OverviewText" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsStockLocations"><ColumnInfo><Column id="Location" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="UpdatedAt" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsPurchases"><ColumnInfo><Column id="EventID" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="QuantityChange" type="STRING" size="1024"/><Column id="Description" type="STRING" size="1024"/><Column id="CreatedAt" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsAdjustments"><ColumnInfo><Column id="EventID" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="QuantityChange" type="STRING" size="1024"/><Column id="Description" type="STRING" size="1024"/><Column id="CreatedAt" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsHistory"><ColumnInfo><Column id="EventID" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="QuantityChange" type="STRING" size="1024"/><Column id="Description" type="STRING" size="1024"/><Column id="CreatedAt" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsActivity" onrowsetchanged="onActivityChanged"><ColumnInfo><Column id="EventID" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="QuantityChange" type="STRING" size="1024"/><Column id="Description" type="STRING" size="1024"/><Column id="CreatedAt" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
-this.onLoad=function(){
-  this.gfnSeed();var id=nexacro.getApplication().selectedProductId,rows=nexacro.getApplication().inventoryProducts,p=null;
-  for(var i=0;i<rows.length;i++)if(rows[i].ProductID==id){p=rows[i];break;}
-  if(!p){this.gfnNavigate("InventoryList");return;}
-  this.staName.set_text(p.ProductName);this.staId.set_text("Product ID: "+p.ProductID+"  •  "+p.Category);
-  this.staStatus.set_text(p.Status || "In stock");
-  this.staInfo.set_text("Buying price: "+p.BuyingPrice+"\nQuantity: "+p.Quantity+" "+p.Unit+"\nThreshold: "+p.Threshold+"\nExpiry date: "+p.ExpiryDate);
-  this.staSupplier.set_text(p.Supplier || "No supplier assigned");
+this.currentTab = "Overview";
+this.onLoad = function() {
+  if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
+  var id = nexacro.getApplication().selectedProductId;
+  if (this.gfnEmpty(id)) return this.gfnNavigate("InventoryList");
+  this.gfnBindRecord(this.dsRequest, { ProductID: id });
+  this.gfnTransaction("product-detail", "products/detail", "dsRequest=dsRequest",
+    "dsProduct=dsProduct dsProductDetail=dsProductDetail dsStockLocations=dsStockLocations "
+      + "dsPurchases=dsPurchases dsAdjustments=dsAdjustments dsHistory=dsHistory",
+    "", "onProductDetailLoaded");
 };
-this.onNavInventoryList=function(){this.gfnNavigate("InventoryList");};
-this.onNavSupplierList=function(){this.gfnNavigate("SupplierList");};
-this.onLogout=function(){this.gfnNavigate("Login");};
-this.onBack=function(){this.gfnNavigate("InventoryList");};
-this.onComingSoon=function(){this.gfnMessage("This section is outside the current requirements.");};
-this.onEdit=function(){this.gfnMessage("Editing will be connected to the product API.");};
-this.onDownload=function(){this.gfnMessage("Download will be connected to the product API.");};
-this.onTab=function(obj){this.staTab.set_text(obj.text+" data will be available from the API.");};
-
-]]></Script></Form></FDL>
+this.onProductDetailLoaded = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0 || !this.dsProductDetail.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.showTab("Overview");
+};
+this.onProductDetailChanged = function(obj, e) {
+  if (e.reason !== nexacro.Dataset.REASON_ASSIGN && e.reason !== nexacro.Dataset.REASON_APPEND &&
+      e.reason !== nexacro.Dataset.REASON_MERGE) return;
+  this.showTab(this.currentTab || "Overview");
+};
+this.showTab = function(name) {
+  this.currentTab = name;
+  this.staTab.set_text(name);
+  var tabs = ["Overview", "Purchases", "Adjustments", "History"];
+  for (var i = 0; i < tabs.length; i++) {
+    this["btn" + tabs[i]].set_cssclass(tabs[i] === name ? "tabActive" : "tab");
+  }
+  var source = name === "Purchases" ? this.dsPurchases
+    : (name === "Adjustments" ? this.dsAdjustments : this.dsHistory);
+  if (name === "Overview") source = this.dsHistory;
+  this.dsActivity.copyData(source);
+};
+this.onTab = function(obj) {
+  var name = String(obj.id || "").replace("btn", "");
+  this.showTab(name || "Overview");
+};
+this.onNavInventoryList = function() { this.gfnNavigate("InventoryList"); };
+this.onNavSupplierList = function() { this.gfnNavigate("SupplierList"); };
+this.onLogout = function() {
+  this.gfnLogout();
+};
+this.onComingSoon = function() { this.gfnMessage("This section is not part of the inventory requirements."); };
+this.onBack = function() { this.gfnNavigate("InventoryList"); };
+this.onEdit = function() {
+  if (!this.dsProductDetail.rowcount) return;
+  nexacro.getApplication().editProductId = this.dsProductDetail.getColumn(0, "ProductID");
+  this.gfnPopup("ProductForm", 500, 800, "onProductSaved");
+};
+this.onProductSaved = function(serviceId, value) { if (value) this.onLoad(); };
+this.onDownload = function() {
+  if (!this.dsProductDetail.rowcount) return;
+  this.gfnDownload("products/export.csv", "product.csv",
+    { search: this.dsProductDetail.getColumn(0, "ProductID") });
+};
+this.onActivityChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
+      e.reason === nexacro.Dataset.REASON_MERGE) this.activityLoaded = true;
+};
+]]></Script><Bind><BindItem id="bind0" compid="staName" propid="text" datasetid="dsProductDetail" columnid="ProductName"/><BindItem id="bind1" compid="staId" propid="text" datasetid="dsProductDetail" columnid="ProductIDLabel"/><BindItem id="bind2" compid="staStatus" propid="text" datasetid="dsProductDetail" columnid="Status"/><BindItem id="bind3" compid="staInfo" propid="text" datasetid="dsProductDetail" columnid="OverviewText"/><BindItem id="bind4" compid="staSupplier" propid="text" datasetid="dsProductDetail" columnid="SupplierInfo"/><BindItem id="bind5" compid="staImage" propid="image" datasetid="dsProductDetail" columnid="ImageUrl"/></Bind></Form></FDL>

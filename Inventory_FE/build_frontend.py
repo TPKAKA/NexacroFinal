@@ -313,15 +313,23 @@ this.onBack=function(){this.gfnNavigate("InventoryList");};
 this.onTab=function(obj){this.staTab.set_text(obj.text+" data will be available from the API.");};
 ''')
 
-(ROOT/'Inventory_FE.xprj').write_text('''<?xml version="1.0" encoding="utf-8"?>
-<Project version="2.1" nexacrosdk="Latest Version"><EnvironmentDefinition url="environment.xml"/><TypeDefinition url="typedefinition.xml"/><AppVariables url="appvariables.xml"/><AppInfos><AppInfo url="Application.xadl"/></AppInfos></Project>''',encoding='utf-8')
+project_xml = '''<?xml version="1.0" encoding="utf-8"?>
+<Project version="2.1" nexacrosdk="Latest Version"><EnvironmentDefinition url="environment.xml"/><TypeDefinition url="typedefinition.xml"/><AppVariables url="appvariables.xml"/><AppInfos><AppInfo url="Application.xadl"/></AppInfos></Project>'''
+project_file = ROOT / 'Inventory_FE.xprj'
+if not project_file.exists() or project_file.read_text(encoding='utf-8') != project_xml:
+    project_file.write_text(project_xml, encoding='utf-8')
 (ROOT/'Application.xadl').write_text('''<?xml version="1.0" encoding="utf-8"?>
-<ADL version="2.0"><Application id="Application" screenid="Desktop_screen"><Layout><MainFrame id="mainframe" width="1440" height="800" titletext="Invento | Inventory Management" showtitlebar="true"><ChildFrame id="childframe" formurl="forms::Login.xfdl" showtitlebar="false"/></MainFrame></Layout><Style url="xcssrc::inventory.xcss"/><Script type="xscript5.1"><![CDATA[]]></Script></Application></ADL>''',encoding='utf-8')
+<ADL version="2.0"><Application id="Application" screenid="Desktop_screen" checkversion="true" version="1.0.0"><Layout><MainFrame id="mainframe" width="1440" height="800" titletext="Invento | Inventory Management" showtitlebar="true"><ChildFrame id="childframe" formurl="forms::Login.xfdl" showtitlebar="false"/></MainFrame></Layout><Style url="xcssrc::inventory.xcss"/><Script type="xscript5.1"><![CDATA[]]></Script></Application></ADL>''',encoding='utf-8')
 (ROOT/'typedefinition.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>
-<TypeDefinition version="3.0"><Modules><Module url="CompBase.json"/><Module url="ComComp.json"/><Module url="Grid.json"/><Module url="ListView.json"/></Modules><Components><Component type="JavaScript" id="Button" classname="nexacro.Button"/><Component type="JavaScript" id="CheckBox" classname="nexacro.CheckBox"/><Component type="JavaScript" id="Static" classname="nexacro.Static"/><Component type="JavaScript" id="Edit" classname="nexacro.Edit"/><Component type="JavaScript" id="Combo" classname="nexacro.Combo"/><Component type="JavaScript" id="FileUpload" classname="nexacro.FileUpload"/><Component type="JavaScript" id="Div" classname="nexacro.Div"/><Component type="JavaScript" id="Grid" classname="nexacro.Grid"/><Component type="JavaScript" id="Dataset" classname="nexacro.NormalDataset"/></Components><Services><Service prefixid="theme" type="resource" url="./_resource_/_theme_/" version="0" cachelevel="session" include_subdir="true"/><Service prefixid="xcssrc" type="resource" url="./_resource_/_xcss_/" version="0" cachelevel="session"/><Service prefixid="forms" type="form" url="./forms/" version="0" cachelevel="none"/><Service prefixid="lib" type="js" url="./lib/" version="0" cachelevel="session"/><Service prefixid="api" type="JSP" url="http://localhost:8080/" version="0" cachelevel="none"/></Services><Protocols/><DeviceAdaptors/><Update/><Deploy><Os name="Windows"/></Deploy></TypeDefinition>''',encoding='utf-8')
+<TypeDefinition version="3.0"><Modules><Module url="CompBase.json"/><Module url="ComComp.json"/><Module url="Grid.json"/><Module url="ListView.json"/></Modules><Components><Component type="JavaScript" id="Button" classname="nexacro.Button"/><Component type="JavaScript" id="CheckBox" classname="nexacro.CheckBox"/><Component type="JavaScript" id="Static" classname="nexacro.Static"/><Component type="JavaScript" id="ImageViewer" classname="nexacro.ImageViewer"/><Component type="JavaScript" id="Edit" classname="nexacro.Edit"/><Component type="JavaScript" id="Combo" classname="nexacro.Combo"/><Component type="JavaScript" id="FileUpload" classname="nexacro.FileUpload"/><Component type="JavaScript" id="Div" classname="nexacro.Div"/><Component type="JavaScript" id="Grid" classname="nexacro.Grid"/><Component type="JavaScript" id="Dataset" classname="nexacro.NormalDataset"/></Components><Services><Service prefixid="theme" type="resource" url="./_resource_/_theme_/" version="1.0.0" cachelevel="session" include_subdir="true"/><Service prefixid="xcssrc" type="resource" url="./_resource_/_xcss_/" version="1.0.0" cachelevel="session"/><Service prefixid="forms" type="form" url="./forms/" version="1.0.0" cachelevel="session"/><Service prefixid="lib" type="js" url="./lib/" version="1.0.0" cachelevel="session"/><Service prefixid="api" type="JSP" url="http://localhost:8080/api/" version="0" cachelevel="none"/></Services><Protocols/><DeviceAdaptors/><Update/><Deploy><Os name="Windows"/></Deploy></TypeDefinition>''',encoding='utf-8')
 (ROOT/'appvariables.xml').write_text('''<?xml version="1.0" encoding="utf-8"?><AppVariables version="2.0"><Datasets/><Variables/><DataObjects/></AppVariables>''',encoding='utf-8')
 (ROOT/'environment.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>
-<ENV version="2.1"><Environment datatyperule="2.0" filesecurelevel="all" themeid="theme::theme_edu"><ScreenDefinition><Screen id="Desktop_screen" type="desktop" themeid="theme::theme_edu"/></ScreenDefinition><Variables/><Cookies/><httpheader/></Environment><Script type="xscript5.1"><![CDATA[]]></Script></ENV>''',encoding='utf-8')
+<ENV version="2.1"><Environment datatyperule="2.0" filesecurelevel="all" themeid="theme::inventory" httptimeout="30" httpretry="0"><ScreenDefinition><Screen id="Desktop_screen" type="desktop" themeid="theme::inventory"/></ScreenDefinition><Variables/><Cookies/><httpheader/></Environment><Script type="xscript5.1"><![CDATA[]]></Script></ENV>''',encoding='utf-8')
+(ROOT/'_resource_'/'_theme_'/'inventory').mkdir(parents=True,exist_ok=True)
+(ROOT/'_resource_'/'_theme_'/'inventory'/'theme.xcss').write_text('''<?xml version="1.0" encoding="utf-8"?>
+<XCSS version="1.1"><CSSData><![CDATA[
+.Form { background:#FFFFFF; color:#202329; }
+]]></CSSData><CSSData type="mobile_medium"><![CDATA[]]></CSSData></XCSS>''',encoding='utf-8')
 
 (ROOT/'lib'/'InventoryCommon.xjs').write_text('''<?xml version="1.0" encoding="utf-8"?>
 <Script version="1.0" type="xscript5.1"><![CDATA[
@@ -331,11 +339,14 @@ this.gfnNumber=function(v){return !this.gfnEmpty(v)&&!isNaN(Number(v))&&Number(v
 this.gfnMessage=function(message){this.alert(message);};
 this.gfnNavigate=function(name){this.getOwnerFrame().set_formurl("forms::"+name+".xfdl");};
 this.gfnPopup=function(name,w,h,callback){
-  var child=new ChildFrame("popup"+name,0,0,w,h);
+  var child=new ChildFrame();
+  child.init("popup"+name,0,0,w,h);
   child.formurl="forms::"+name+".xfdl";
   child.openalign="center middle";
   child.showtitlebar=false;
   child.dragmovetype="all";
+  child.background="#FFFFFF";
+  child.border="1px solid #DCE5E2";
   child.showModal(this.getOwnerFrame(),{},this,callback);
 };
 /* One transaction entry point for the future xapi endpoints. */
@@ -398,4 +409,6 @@ Form { background:#F8FAFC; color:#1B2A41; font:14px "Segoe UI"; }
 
 from figma_layout import apply as apply_figma_layout
 apply_figma_layout(ROOT)
-print('Generated', len(list((ROOT/'forms').glob('*.xfdl'))), 'Figma-aligned Nexacro forms')
+from inventory_codegen import finalize as finalize_inventory
+finalize_inventory(ROOT)
+print('Generated and finalized', len(list((ROOT/'forms').glob('*.xfdl'))), 'Nexacro inventory forms')

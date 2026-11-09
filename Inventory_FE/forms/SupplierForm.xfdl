@@ -6,7 +6,7 @@
 <Static id="staImageGlyph" left="162" top="83" width="48" height="55" text="+" cssclass="uploadGlyph"/>
 <Static id="staImage" left="240" top="82" width="220" height="50" text="Drag image here
 or Browse image" cssclass="uploadHint"/>
-<FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker"/>
+<FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker" onitemchanged="onImageChanged" onsuccess="onImageUploadSuccess" onerror="onImageUploadError"/>
 <Static id="staSupplierName" left="28" top="185" width="150" height="40" text="Supplier Name" cssclass="modalLabel"/>
 <Edit id="edtSupplierName" left="188" top="185" width="280" height="42" cssclass="modalField" displaynulltext="Enter supplier name"/>
 <Static id="staProduct" left="28" top="257" width="150" height="40" text="Product" cssclass="modalLabel"/>
@@ -22,16 +22,84 @@ or Browse image" cssclass="uploadHint"/>
 <Button id="btnCancel" left="267" top="665" width="94" height="40" text="Discard" cssclass="secondary" onclick="onCancel"/>
 <Button id="btnSave" left="370" top="665" width="98" height="40" text="Add Supplier" cssclass="primary" onclick="onSave"/>
 </Layout></Layouts>
-<Objects><Dataset id="dsCategory"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Electronics</Col><Col id="Label">Electronics</Col></Row><Row><Col id="Code">Office</Col><Col id="Label">Office</Col></Row><Row><Col id="Code">Stationery</Col><Col id="Label">Stationery</Col></Row><Row><Col id="Code">Other</Col><Col id="Label">Other</Col></Row></Rows></Dataset><Dataset id="dsType"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Taking return</Col><Col id="Label">Taking return</Col></Row><Row><Col id="Code">Not taking return</Col><Col id="Label">Not taking return</Col></Row></Rows></Dataset></Objects>
+<Objects><Dataset id="dsCategory"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Electronics</Col><Col id="Label">Electronics</Col></Row><Row><Col id="Code">Office</Col><Col id="Label">Office</Col></Row><Row><Col id="Code">Stationery</Col><Col id="Label">Stationery</Col></Row><Row><Col id="Code">Other</Col><Col id="Label">Other</Col></Row></Rows></Dataset><Dataset id="dsType"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Taking return</Col><Col id="Label">Taking return</Col></Row><Row><Col id="Code">Not taking return</Col><Col id="Label">Not taking return</Col></Row></Rows></Dataset><Dataset id="dsSupplier" onrowsetchanged="onSupplierDatasetChanged"><ColumnInfo><Column id="SupplierID" type="STRING" size="1024"/><Column id="SupplierName" type="STRING" size="1024"/><Column id="Product" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Contact" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="OnTheWay" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSupplierResult"><ColumnInfo><Column id="SupplierID" type="STRING" size="1024"/><Column id="SupplierName" type="STRING" size="1024"/><Column id="Product" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Contact" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="OnTheWay" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsCodes"><ColumnInfo><Column id="CodeType" type="STRING" size="1024"/><Column id="Code" type="STRING" size="1024"/><Column id="Label" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
-this.onLoad=function(){};
-this.onCancel=function(){this.close();};
-this.onSave=function(){
-  var supplier={SupplierID:"SUP"+new Date().getTime(),Email:"",OnTheWay:"0"}; var fields=["SupplierName","Product","Category","BuyingPrice","Contact","Type"];
-  for(var i=0;i<fields.length;i++)supplier[fields[i]]=this["edt"+fields[i]].value;
-  for(var j=0;j<fields.length;j++)if(this.gfnEmpty(supplier[fields[j]]))return this.gfnMessage(fields[j]+" is required.");
-  if(!this.gfnNumber(supplier.BuyingPrice))return this.gfnMessage("Price and on-the-way quantity must be non-negative numbers.");
-  if(supplier.Type!="Taking return" && supplier.Type!="Not taking return")return this.gfnMessage("Type must be Taking return or Not taking return.");
-  this.close(JSON.stringify(supplier));
+this.imageUploaded = false;
+this.onLoad = function() {
+  this.gfnBindRecord(this.dsSupplier, {
+    SupplierID: "", SupplierName: "", Product: "", Category: "Electronics",
+    BuyingPrice: "0", Contact: "", Email: "", Type: "Taking return",
+    OnTheWay: "0", ImageUrl: ""
+  });
+  this.gfnLoadCodes("onSupplierCodesLoaded");
 };
-]]></Script></Form></FDL>
+this.onSupplierCodesLoaded = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnCacheCodes();
+  this.dsCategory.clearData();
+  this.dsType.clearData();
+  for (var i = 0; i < this.dsCodes.rowcount; i++) {
+    var type = this.dsCodes.getColumn(i, "CodeType");
+    var value = this.dsCodes.getColumn(i, "Code");
+    var target = type === "Category" ? this.dsCategory : (type === "SupplierType" ? this.dsType : null);
+    if (target) {
+      var row = target.addRow();
+      target.setColumn(row, "Code", value);
+      target.setColumn(row, "Label", value);
+    }
+  }
+};
+this.onImageChanged = function() { this.imageUploaded = false; };
+this.onSave = function() {
+  var row = this.dsSupplier.rowposition < 0 ? 0 : this.dsSupplier.rowposition;
+  var fields = ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"];
+  for (var i = 0; i < fields.length; i++) {
+    if (this.gfnEmpty(this.dsSupplier.getColumn(row, fields[i]))) return this.gfnMessage(fields[i] + " is required.");
+  }
+  if (!this.gfnNumber(this.dsSupplier.getColumn(row, "BuyingPrice")) ||
+      !this.gfnNumber(this.dsSupplier.getColumn(row, "OnTheWay"))) {
+    return this.gfnMessage("Price and on-the-way quantity must be non-negative numbers.");
+  }
+  var email = this.dsSupplier.getColumn(row, "Email");
+  if (!this.gfnEmpty(email) && !this.gfnEmail(email)) return this.gfnMessage("Enter a valid email address.");
+  if (this.dsSupplier.getColumn(row, "Type") !== "Taking return" &&
+      this.dsSupplier.getColumn(row, "Type") !== "Not taking return") {
+    return this.gfnMessage("Choose a valid supplier type.");
+  }
+  if (this.uplImage.getItemCount(true) > 0 && !this.imageUploaded) {
+    var token = nexacro.getApplication().sessionToken;
+    if (!token) return this.gfnHandleApiError(-1, "Your session has expired. Sign in again.");
+    this.uplImage.upload("api::uploads/image?sessionToken=" + token);
+    return;
+  }
+  this.submitSupplier();
+};
+this.onImageUploadSuccess = function(obj, e) {
+  var uploaded = e && e.datasets;
+  var result = null;
+  if (uploaded && uploaded.length) result = uploaded[0];
+  else if (uploaded && uploaded.getCount && uploaded.getCount() > 0) result = uploaded.getItem(0);
+  if (!result || !result.rowcount) return this.gfnMessage("The image upload returned no image URL.");
+  var url = result.getColumn(0, "ImageUrl");
+  if (this.gfnEmpty(url)) return this.gfnMessage("The image upload returned no image URL.");
+  var row = this.dsSupplier.rowposition < 0 ? 0 : this.dsSupplier.rowposition;
+  this.dsSupplier.setColumn(row, "ImageUrl", url);
+  this.imageUploaded = true;
+  this.submitSupplier();
+};
+this.onImageUploadError = function(obj, e) {
+  this.gfnMessage(e && e.errormsg ? e.errormsg : "The image could not be uploaded.");
+};
+this.submitSupplier = function() {
+  this.gfnTransaction("supplier-save", "suppliers/save", "dsSupplier=dsSupplier",
+    "dsSupplierResult=dsSupplierResult", "", "onSupplierSaveResult");
+};
+this.onSupplierSaveResult = function(serviceId, errorCode, errorMessage) {
+  if (errorCode < 0 || !this.dsSupplierResult.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.close("saved");
+};
+this.onCancel = function() { this.close(""); };
+this.onSupplierDatasetChanged = function(obj, e) {
+  if (e.reason === nexacro.Dataset.REASON_CHANGESTATUS) this.supplierInputChanged = true;
+};
+]]></Script><Bind><BindItem id="bind0" compid="edtSupplierName" propid="value" datasetid="dsSupplier" columnid="SupplierName"/><BindItem id="bind1" compid="edtProduct" propid="value" datasetid="dsSupplier" columnid="Product"/><BindItem id="bind2" compid="edtCategory" propid="value" datasetid="dsSupplier" columnid="Category"/><BindItem id="bind3" compid="edtBuyingPrice" propid="value" datasetid="dsSupplier" columnid="BuyingPrice"/><BindItem id="bind4" compid="edtContact" propid="value" datasetid="dsSupplier" columnid="Contact"/><BindItem id="bind5" compid="edtType" propid="value" datasetid="dsSupplier" columnid="Type"/></Bind></Form></FDL>

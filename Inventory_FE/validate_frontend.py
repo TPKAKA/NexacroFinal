@@ -20,12 +20,66 @@ for path in files:
         check = subprocess.run(['node', '--check'], input=script, text=True, capture_output=True)
         if check.returncode:
             errors.append(f'{path}: {check.stderr.strip()}')
+        if re.search(r'\beval\s*\(', script):
+            errors.append(f'{path}: eval is not allowed')
         if path.suffix == '.xfdl':
-            handlers = re.findall(r'\b(?:onclick|onload|oncelldblclick)="([^"]+)"', path.read_text(encoding='utf-8'))
+            handlers = re.findall(r'\bon[a-z]+="([^"]+)"', path.read_text(encoding='utf-8'))
             for handler in handlers:
                 if not re.search(r'\bthis\.' + re.escape(handler) + r'\s*=', script):
                     errors.append(f'{path}: missing {handler}')
+    if path.suffix == '.xfdl':
+        form = tree.getroot().find('./Form')
+        if form is None:
+            errors.append(f'{path}: missing Form element')
+            continue
+        if form.findall('./BindItem'):
+            errors.append(f'{path}: BindItem must be nested under <Bind>')
+        controls = {node.get('id') for node in form.findall('.//Layouts//Layout//*') if node.get('id')}
+        datasets = {node.get('id'): node for node in form.findall('./Objects/Dataset') if node.get('id')}
+        for binding in form.findall('./Bind/BindItem'):
+            component = binding.get('compid', '').split('.')[-1]
+            dataset_id = binding.get('datasetid', '')
+            column_id = binding.get('columnid', '')
+            if component not in controls:
+                errors.append(f'{path}: binding references missing component {component}')
+            dataset = datasets.get(dataset_id)
+            if dataset is None:
+                errors.append(f'{path}: binding references missing Dataset {dataset_id}')
+            elif dataset.find(f'./ColumnInfo/Column[@id="{column_id}"]') is None:
+                errors.append(f'{path}: binding references missing column {dataset_id}.{column_id}')
 assert len(forms) == 7, f'Expected 7 forms, found {len(forms)}'
+application = ET.parse(root / 'Application.xadl').getroot().find('./Application')
+if application is None or application.get('checkversion') != 'true' or not application.get('version'):
+    errors.append('Application.xadl: WRE CheckVersion/version is not configured')
+environment = ET.parse(root / 'environment.xml').getroot().find('./Environment')
+if environment is None or environment.get('httptimeout') != '30' or environment.get('httpretry') != '0':
+    errors.append('environment.xml: HTTP timeout/retry is not configured')
+typedefinition = ET.parse(root / 'typedefinition.xml').getroot()
+components = {node.get('id'): node for node in typedefinition.findall('./Components/Component')}
+if 'ImageViewer' not in components:
+    errors.append('typedefinition.xml: ImageViewer is not registered')
+api_service = next((node for node in typedefinition.findall('./Services/Service') if node.get('prefixid') == 'api'), None)
+if api_service is None or api_service.get('cachelevel') != 'none' or not api_service.get('url', '').endswith('/api/'):
+    errors.append('typedefinition.xml: API service prefix/cache configuration is invalid')
+detail = ET.parse(root / 'forms' / 'ProductDetail.xfdl').getroot().find('./Form')
+if detail.find('.//Layouts//ImageViewer[@id="staImage"]') is None:
+    errors.append('ProductDetail.xfdl: product image must use ImageViewer')
+if not any(binding.get('compid') == 'staImage' and binding.get('propid') == 'image'
+           for binding in detail.findall('./Bind/BindItem')):
+    errors.append('ProductDetail.xfdl: product image is not Dataset-bound')
+inventory = ET.parse(root / 'forms' / 'InventoryList.xfdl').getroot().find('./Form')
+summary_dataset = next((dataset for dataset in inventory.findall('./Objects/Dataset')
+                        if dataset.get('id') == 'dsSummary'), None)
+if summary_dataset is None or summary_dataset.find('./ColumnInfo/Column[@id="FilteredProducts"]') is None:
+    errors.append('InventoryList.xfdl: filtered product count is missing from dsSummary')
+inventory_script = inventory.find('./Script').text or ''
+if 'getColumn(0, "FilteredProducts")' not in inventory_script:
+    errors.append('InventoryList.xfdl: pagination must use the filtered product count')
+common_script = (root / 'lib' / 'InventoryCommon.xjs').read_text(encoding='utf-8')
+if '@param' not in common_script or '@returns' not in common_script:
+    errors.append('InventoryCommon.xjs: public common functions need jsDoc')
+if 'loadXML(app.inventoryCodeCache, true)' not in common_script:
+    errors.append('InventoryCommon.xjs: cached Dataset load must replace existing rows')
 if errors:
     raise SystemExit('\n'.join(errors))
 print(f'Validated {len(forms)} forms and {len(files)} XML source files.')
