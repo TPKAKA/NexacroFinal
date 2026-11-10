@@ -414,7 +414,8 @@ this.gfnResponsiveGridColumns = function(grid, visibleIndexes) {
 this.gfnResponsiveAuth = function(signup) {
   var width = Number(this.getOffsetWidth()) || 1440;
   var height = Number(this.getOffsetHeight()) || 960;
-  var mobile = width < 900 || height < 720;
+  // The desktop auth composition needs roughly 1,200px for both brand and form.
+  var mobile = width < 1280 || height < 720;
   this.gfnResponsiveBounds("staAuthCanvas", 0, 0, width, height);
   this.gfnResponsiveVisible("staLogoMark", !mobile);
   this.gfnResponsiveVisible("staBrandLarge", !mobile);
@@ -1529,15 +1530,22 @@ def finalize(root):
 
     application = root / "Application.xadl"
     adl = application.read_text(encoding="utf-8")
-    adl = adl.replace('width="1440" height="800" titletext="KANBAN | Inventory Management"',
-                      'width="1440" height="960" titletext="KANBAN | Inventory Management"')
+    mainframe_tag = re.search(r'<MainFrame\b[^>]*>', adl)
+    if mainframe_tag:
+        normalized = re.sub(r'\s+(?:width|height|left|top|right|bottom)="[^"]*"', '', mainframe_tag.group(0))
+        normalized = normalized[:-1] + ' left="0" top="0" right="0" bottom="0">'
+        adl = adl[:mainframe_tag.start()] + normalized + adl[mainframe_tag.end():]
+    adl = adl.replace(
+        '<ChildFrame id="childframe" formurl="forms::Login.xfdl" showtitlebar="false"/>',
+        '<ChildFrame id="childframe" left="0" top="0" right="0" bottom="0" formurl="forms::Login.xfdl" showtitlebar="false"/>',
+    )
     app_script = '<Script type="xscript5.1"><![CDATA[this.sessionToken = ""; this.currentUserName = ""; '
     app_script += 'this.selectedProductId = ""; this.editProductId = ""; this.inventoryCodeCache = "";]]></Script>'
     adl = re.sub(r'<Script type="xscript5\.1"><!\[CDATA\[.*?\]\]></Script>', app_script, adl, count=1, flags=re.S)
     app_tag = re.search(r'<Application\b[^>]*>', adl)
     if app_tag:
         normalized = re.sub(r'\s+(?:checkversion|version)="[^"]*"', '', app_tag.group(0))
-        normalized = normalized[:-1] + ' checkversion="true" version="1.0.0">'
+        normalized = normalized[:-1] + ' checkversion="true" version="1.0.1">'
         adl = adl[:app_tag.start()] + normalized + adl[app_tag.end():]
     application.write_text(adl, encoding="utf-8")
 
@@ -1560,7 +1568,7 @@ def finalize(root):
     for prefix in ("theme", "xcssrc", "forms", "lib"):
         config = re.sub(
             rf'(<Service\b(?=[^>]*\bprefixid="{prefix}")[^>]*\bversion=")[^"]*(")',
-            r'\g<1>1.0.0\2', config,
+            r'\g<1>1.0.1\2', config,
         )
     config = re.sub(
         r'(<Service\b(?=[^>]*\bprefixid="api")[^>]*\bversion=")[^"]*(")',
