@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FDL version="2.1"><Form id="SignUp" width="1440" height="960" titletext="SignUp" onload="onLoad">
+<FDL version="2.1"><Form id="SignUp" width="1440" height="960" titletext="SignUp" onload="onLoad" onsize="onResponsiveSize" scrolltype="vertical" scrollbartype="none none">
 <Layouts><Layout width="1440" height="960">
 <Static id="staAuthCanvas" left="0" top="0" width="1440" height="960" text="" cssclass="authCanvas"/>
 <Static id="staLogoMark" left="320" top="355" width="150" height="160" text="K" cssclass="authLogoMark"/>
@@ -23,8 +23,10 @@
 <Objects><Dataset id="dsSignup" onrowsetchanged="onSignupDatasetChanged"><ColumnInfo><Column id="Name" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Password" type="STRING" size="1024"/><Column id="Confirm" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSession"><ColumnInfo><Column id="UserID" type="STRING" size="1024"/><Column id="Name" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Token" type="STRING" size="1024"/><Column id="ExpiresAt" type="STRING" size="1024"/><Column id="RememberMe" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.onLoad = function() {
+  this.onResponsiveSize();
   this.gfnBindRecord(this.dsSignup, { Name: "", Email: "", Password: "", Confirm: "" });
 };
+this.onResponsiveSize = function() { this.gfnResponsiveAuth(true); };
 this.onCreate = function() {
   var row = this.dsSignup.rowposition < 0 ? 0 : this.dsSignup.rowposition;
   var name = this.dsSignup.getColumn(row, "Name");

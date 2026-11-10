@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FDL version="2.1"><Form id="ProductDetail" width="1440" height="960" titletext="ProductDetail" onload="onLoad">
+<FDL version="2.1"><Form id="ProductDetail" width="1440" height="960" titletext="ProductDetail" onload="onLoad" onsize="onResponsiveSize" scrolltype="vertical" scrollbartype="none none">
 <Layouts><Layout width="1440" height="960">
 <Static id="staSidebarBg" left="0" top="0" width="280" height="960" text="" cssclass="sidebar"/>
 <Static id="staTopbarBg" left="280" top="0" width="1160" height="100" text="" cssclass="topbar"/>
@@ -40,6 +40,7 @@
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.currentTab = "Overview";
 this.onLoad = function() {
+  this.onResponsiveSize();
   if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
   var id = nexacro.getApplication().selectedProductId;
   if (this.gfnEmpty(id)) return this.gfnNavigate("InventoryList");
@@ -48,6 +49,9 @@ this.onLoad = function() {
     "dsProduct=dsProduct dsProductDetail=dsProductDetail dsStockLocations=dsStockLocations "
       + "dsPurchases=dsPurchases dsAdjustments=dsAdjustments dsHistory=dsHistory",
     "", "onProductDetailLoaded");
+};
+this.onResponsiveSize = function() {
+  this.gfnResponsiveDetail(this.gfnResponsiveShell("ProductDetail", false));
 };
 this.onProductDetailLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0 || !this.dsProductDetail.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
@@ -62,7 +66,10 @@ this.showTab = function(name) {
   this.currentTab = name;
   this.staTab.set_text(name);
   var tabs = ["Overview", "Purchases", "Adjustments", "History"];
+  var compact = this.getOffsetWidth() < 920;
+  var labels = compact ? ["Overview", "Purchases", "Adjust.", "History"] : tabs;
   for (var i = 0; i < tabs.length; i++) {
+    this["btn" + tabs[i]].set_text(labels[i]);
     this["btn" + tabs[i]].set_cssclass(tabs[i] === name ? "tabActive" : "tab");
   }
   var source = name === "Purchases" ? this.dsPurchases

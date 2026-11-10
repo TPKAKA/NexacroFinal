@@ -61,6 +61,16 @@ def grid_from(path, grid_id, x, y, w, h):
 
 def replace_layout(path, widgets, width=1440, height=960):
     source = path.read_text(encoding='utf-8')
+    def make_form_responsive(match):
+        tag = match.group(0)
+        if 'onsize=' not in tag:
+            tag = tag[:-1] + ' onsize="onResponsiveSize">'
+        if 'scrolltype=' not in tag:
+            tag = tag[:-1] + ' scrolltype="vertical">'
+        if 'scrollbartype=' not in tag:
+            tag = tag[:-1] + ' scrollbartype="none none">'
+        return tag
+    source = re.sub(r'<Form\b[^>]*>', make_form_responsive, source, count=1)
     source = re.sub(r'(<Form\b[^>]*\bwidth=")[^"]*', r'\g<1>'+str(width), source, count=1)
     source = re.sub(r'(<Form\b[^>]*\bheight=")[^"]*', r'\g<1>'+str(height), source, count=1)
     layout = f'<Layouts><Layout width="{width}" height="{height}">\n' + '\n'.join(widgets) + '\n</Layout></Layouts>'
@@ -119,7 +129,7 @@ def inventory(root):
               c('Static','staProductsCard',312,330,1096,581,'','card'),
               c('Static','staProductsTitle',330,349,300,37,'Products','sectionTitle'),
               c('Button','btnAdd',1020,345,130,42,'Add Product','primary','onAdd'),
-              c('Button','btnFilter',1160,345,105,42,'☷  Filters','secondary','onFilter'),
+              c('Button','btnFilter',1160,345,105,42,'Columns','secondary','onFilter'),
               c('Button','btnDownload',1274,345,118,42,'Download all','secondary','onDownload'),
               grid_from(path,'grdProducts',330,401,1062,452),
               c('Button','btnPrev',330,865,92,35,'Previous','secondary','onPrev'),
@@ -140,7 +150,7 @@ def suppliers(root):
     parts += [c('Static','staSuppliersCard',312,124,1096,787,'','card'),
               c('Static','staSuppliersTitle',330,143,400,37,'Suppliers','sectionTitle'),
               c('Button','btnAdd',1020,140,130,42,'Add Supplier','primary','onAdd'),
-              c('Button','btnFilter',1160,140,105,42,'☷  Filters','secondary','onFilter'),
+              c('Button','btnFilter',1160,140,105,42,'Columns','secondary','onFilter'),
               c('Button','btnDownload',1274,140,118,42,'Download all','secondary','onDownload'),
               supplier_grid,
               c('Button','btnPrev',330,865,92,35,'Previous','secondary','onPrev'),
@@ -258,6 +268,8 @@ def apply(root):
 .Static.authBrand { color:#1598CC; -nexa-text-align:center; font:700 52px "Segoe UI"; }
 .Button.nav, .Button.nav[status=focused] { background:transparent; color:#727C89; -nexa-border:0px none; -nexa-text-align:left; -nexa-text-padding:0px 14px; font:14px "Segoe UI"; }
 .Button.navActive, .Button.navActive[status=focused] { background:#F4F9FF; color:#2475D6; -nexa-border:0px none; -nexa-text-align:left; -nexa-text-padding:0px 14px; font:600 14px "Segoe UI"; }
+.Button.navCompact, .Button.navCompact[status=focused] { background:#FFFFFF; color:#727C89; -nexa-border:1px solid #E0E4E9; border-radius:4px; -nexa-text-align:center; -nexa-text-padding:0px 4px; font:600 12px "Segoe UI"; }
+.Button.navCompactActive, .Button.navCompactActive[status=focused] { background:#F4F9FF; color:#2475D6; -nexa-border:1px solid #AFCBED; border-radius:4px; -nexa-text-align:center; -nexa-text-padding:0px 4px; font:600 12px "Segoe UI"; }
 .Static.globalSearchText { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-padding:0px 14px; font:13px "Segoe UI"; }
 .Edit.globalSearch { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-padding:0px 14px; font:13px "Segoe UI"; }
 .Button.topSearchButton { background:#F9FAFC; color:#3578C9; -nexa-border:1px solid #E9EBF0; font:12px "Segoe UI"; }
