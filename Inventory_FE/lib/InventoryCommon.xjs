@@ -294,7 +294,8 @@ this.gfnResponsiveGridColumns = function(grid, visibleIndexes) {
 this.gfnResponsiveAuth = function(signup) {
   var width = Number(this.getOffsetWidth()) || 1440;
   var height = Number(this.getOffsetHeight()) || 960;
-  var mobile = width < 900 || height < 720;
+  // The desktop auth composition needs roughly 1,200px for both brand and form.
+  var mobile = width < 1280 || height < 720;
   this.gfnResponsiveBounds("staAuthCanvas", 0, 0, width, height);
   this.gfnResponsiveVisible("staLogoMark", !mobile);
   this.gfnResponsiveVisible("staBrandLarge", !mobile);

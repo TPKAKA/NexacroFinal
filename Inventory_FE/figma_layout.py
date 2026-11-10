@@ -253,7 +253,15 @@ def apply(root):
     popup(root,False); popup(root,True)
     detail(root)
     app=root/'Application.xadl'
-    source=app.read_text(encoding='utf-8').replace('width="1440" height="800" titletext="Invento | Inventory Management"','width="1440" height="960" titletext="KANBAN | Inventory Management"')
+    source=app.read_text(encoding='utf-8')
+    source=source.replace(
+        'width="1440" height="800" titletext="Invento | Inventory Management"',
+        'left="0" top="0" right="0" bottom="0" titletext="KANBAN | Inventory Management"',
+    )
+    source=source.replace(
+        '<ChildFrame id="childframe" formurl="forms::Login.xfdl" showtitlebar="false"/>',
+        '<ChildFrame id="childframe" left="0" top="0" right="0" bottom="0" formurl="forms::Login.xfdl" showtitlebar="false"/>',
+    )
     app.write_text(source,encoding='utf-8')
     (root/'_resource_'/'_xcss_'/'inventory.xcss').write_text('''<?xml version="1.0" encoding="utf-8"?>
 <XCSS version="1.1"><CSSData><![CDATA[
