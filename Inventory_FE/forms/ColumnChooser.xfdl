@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1"><Form id="ColumnChooser" width="360" height="480" titletext="Choose Grid columns" onload="onLoad" onsize="onResponsiveSize">
+<Layouts><Layout width="360" height="480">
+<Static id="staTitle" left="16" top="14" width="328" height="30" text="Choose visible columns" cssclass="popupTitle"/>
+<Static id="staHint" left="16" top="48" width="328" height="22" text="Check the columns to display." cssclass="muted"/>
+<Grid id="grdColumns" left="12" top="78" width="336" height="342" binddataset="dsColumns" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="56"/><Column size="280"/></Columns><Rows><Row size="34" band="head"/><Row size="38"/></Rows><Band id="head"><Cell col="0" text="Show"/><Cell col="1" text="Column"/></Band><Band id="body"><Cell col="0" displaytype="checkboxcontrol" edittype="checkbox" checkboxtruevalue="1" checkboxfalsevalue="0" text="bind:Visible"/><Cell col="1" text="bind:Title"/></Band></Format></Formats></Grid>
+<Button id="btnCancel" left="170" top="432" width="82" height="34" text="Cancel" cssclass="secondary" onclick="onCancel"/>
+<Button id="btnApply" left="260" top="432" width="88" height="34" text="Apply" cssclass="primary" onclick="onApply"/>
+</Layout></Layouts>
+<Objects><Dataset id="dsColumns"><ColumnInfo><Column id="Title" type="STRING" size="256"/><Column id="ColumnIndex" type="STRING" size="16"/><Column id="Visible" type="STRING" size="1"/></ColumnInfo></Dataset></Objects>
+<Script type="xscript5.1"><![CDATA[this.targetGrid = null;
+this.onLoad = function() {
+  this.targetGrid = this.getOwnerFrame().pvGrid;
+  if (!this.targetGrid) {
+    this.alert("The Grid to configure is unavailable.");
+    this.close(false);
+    return;
+  }
+  var grid = this.targetGrid;
+  var count = grid.getFormatColCount();
+  if (!grid._responsiveBaseColumnSizes) {
+    grid._responsiveBaseColumnSizes = [];
+    for (var i = 0; i < count; i++) {
+      var baseSize = Number(grid.getFormatColProperty(i, "size"));
+      grid._responsiveBaseColumnSizes[i] = baseSize > 0 ? baseSize : 120;
+    }
+  }
+  this.dsColumns.clearData();
+  for (var column = 0; column < count; column++) {
+    var title = "Column " + (column + 1);
+    for (var cell = 0; cell < grid.getCellCount("head"); cell++) {
+      if (Number(grid.getCellProperty("head", cell, "col")) === column) {
+        title = String(grid.getCellProperty("head", cell, "text") || title);
+        break;
+      }
+    }
+    var row = this.dsColumns.addRow();
+    this.dsColumns.setColumn(row, "Title", title);
+    this.dsColumns.setColumn(row, "ColumnIndex", String(column));
+    this.dsColumns.setColumn(row, "Visible", Number(grid.getFormatColProperty(column, "size")) > 0 ? "1" : "0");
+  }
+  this.onResponsiveSize();
+};
+this.onResponsiveSize = function() {
+  var width = Number(this.getOffsetWidth()) || 360;
+  var height = Number(this.getOffsetHeight()) || 480;
+  this.staTitle.set_left(16);
+  this.staTitle.set_top(14);
+  this.staTitle.set_width(Math.max(200, width - 32));
+  this.staHint.set_left(16);
+  this.staHint.set_top(48);
+  this.staHint.set_width(Math.max(200, width - 32));
+  this.grdColumns.set_left(12);
+  this.grdColumns.set_top(78);
+  this.grdColumns.set_width(Math.max(220, width - 24));
+  this.grdColumns.set_height(Math.max(120, height - 138));
+  this.grdColumns.setFormatColProperty(0, "size", Math.min(72, Math.max(48, Math.round(width * 0.19))));
+  this.grdColumns.setFormatColProperty(1, "size", Math.max(120, width - this.grdColumns.getFormatColProperty(0, "size") - 36));
+  this.btnCancel.set_left(Math.max(12, width - 190));
+  this.btnCancel.set_top(height - 48);
+  this.btnApply.set_left(Math.max(12, width - 100));
+  this.btnApply.set_top(height - 48);
+};
+this.onApply = function() {
+  var grid = this.targetGrid;
+  if (!grid) return this.close(false);
+  var visibleCount = 0;
+  for (var i = 0; i < this.dsColumns.rowcount; i++) {
+    if (String(this.dsColumns.getColumn(i, "Visible")) === "1") visibleCount++;
+  }
+  if (!visibleCount) return this.alert("Keep at least one Grid column visible.");
+  grid.set_enableredraw(false);
+  for (var row = 0; row < this.dsColumns.rowcount; row++) {
+    var columnIndex = Number(this.dsColumns.getColumn(row, "ColumnIndex"));
+    var isVisible = String(this.dsColumns.getColumn(row, "Visible")) === "1";
+    var originalSize = grid._responsiveBaseColumnSizes[columnIndex] || 120;
+    grid.setFormatColProperty(columnIndex, "size", isVisible ? originalSize : 0);
+  }
+  grid.set_enableredraw(true);
+  this.close(true);
+};
+this.onCancel = function() { this.close(false); };
+]]></Script></Form></FDL>

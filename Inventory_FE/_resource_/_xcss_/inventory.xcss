@@ -11,6 +11,8 @@
 .Static.authBrand { color:#1598CC; -nexa-text-align:center; font:700 52px "Segoe UI"; }
 .Button.nav, .Button.nav[status=focused] { background:transparent; color:#727C89; -nexa-border:0px none; -nexa-text-align:left; -nexa-text-padding:0px 14px; font:14px "Segoe UI"; }
 .Button.navActive, .Button.navActive[status=focused] { background:#F4F9FF; color:#2475D6; -nexa-border:0px none; -nexa-text-align:left; -nexa-text-padding:0px 14px; font:600 14px "Segoe UI"; }
+.Button.navCompact, .Button.navCompact[status=focused] { background:#FFFFFF; color:#727C89; -nexa-border:1px solid #E0E4E9; border-radius:4px; -nexa-text-align:center; -nexa-text-padding:0px 4px; font:600 12px "Segoe UI"; }
+.Button.navCompactActive, .Button.navCompactActive[status=focused] { background:#F4F9FF; color:#2475D6; -nexa-border:1px solid #AFCBED; border-radius:4px; -nexa-text-align:center; -nexa-text-padding:0px 4px; font:600 12px "Segoe UI"; }
 .Static.globalSearchText { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-padding:0px 14px; font:13px "Segoe UI"; }
 .Edit.globalSearch { background:#F9FAFC; color:#A1A8B3; -nexa-border:1px solid #E9EBF0; -nexa-padding:0px 14px; font:13px "Segoe UI"; }
 .Button.topSearchButton { background:#F9FAFC; color:#3578C9; -nexa-border:1px solid #E9EBF0; font:12px "Segoe UI"; }
