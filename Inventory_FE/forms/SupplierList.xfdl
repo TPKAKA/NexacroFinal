@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FDL version="2.1"><Form id="SupplierList" width="1440" height="960" titletext="SupplierList" onload="onLoad">
+<FDL version="2.1"><Form id="SupplierList" width="1440" height="960" titletext="SupplierList" onload="onLoad" onsize="onResponsiveSize" scrolltype="vertical" scrollbartype="none none">
 <Layouts><Layout width="1440" height="960">
 <Static id="staSidebarBg" left="0" top="0" width="280" height="960" text="" cssclass="sidebar"/>
 <Static id="staTopbarBg" left="280" top="0" width="1160" height="100" text="" cssclass="topbar"/>
@@ -20,7 +20,7 @@
 <Static id="staSuppliersCard" left="312" top="124" width="1096" height="787" text="" cssclass="card"/>
 <Static id="staSuppliersTitle" left="330" top="143" width="400" height="37" text="Suppliers" cssclass="sectionTitle"/>
 <Button id="btnAdd" left="1020" top="140" width="130" height="42" text="Add Supplier" cssclass="primary" onclick="onAdd"/>
-<Button id="btnFilter" left="1160" top="140" width="105" height="42" text="☷  Filters" cssclass="secondary" onclick="onFilter"/>
+<Button id="btnFilter" left="1160" top="140" width="105" height="42" text="Columns" cssclass="secondary" onclick="onFilter"/>
 <Button id="btnDownload" left="1274" top="140" width="118" height="42" text="Download all" cssclass="secondary" onclick="onDownload"/>
 <Grid id="grdSuppliers" binddataset="dsSuppliers" left="330" top="197" width="1062" height="651" cssclass="dataGrid" autofittype="col" selecttype="row" onheadclick="onSort"><Formats><Format id="default"><Columns><Column size="212"/><Column size="201"/><Column size="190"/><Column size="235"/><Column size="179"/><Column size="103"/></Columns><Rows><Row size="44" band="head"/><Row size="48"/></Rows><Band id="head"><Cell col="0" text="Supplier name"/><Cell col="1" text="Product"/><Cell col="2" text="Contact number"/><Cell col="3" text="Email"/><Cell col="4" text="Type"/><Cell col="5" text="On the way"/></Band><Band id="body"><Cell col="0" text="bind:SupplierName"/><Cell col="1" text="bind:Product"/><Cell col="2" text="bind:Contact"/><Cell col="3" text="bind:Email"/><Cell col="4" text="bind:Type" color="expr:Type=='Taking return'?'#29A46B':'#D56B6B'"/><Cell col="5" text="bind:OnTheWay"/></Band></Format></Formats></Grid>
 <Button id="btnPrev" left="330" top="865" width="92" height="35" text="Previous" cssclass="secondary" onclick="onPrev"/>
@@ -36,8 +36,12 @@ this.typeFilter = "";
 this.sortField = "SupplierName";
 this.sortOrder = "ASC";
 this.onLoad = function() {
+  this.onResponsiveSize();
   if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
   this.refresh();
+};
+this.onResponsiveSize = function() {
+  this.gfnResponsiveSupplierList(this.gfnResponsiveShell("SupplierList", true));
 };
 this.onNavInventoryList = function() { this.gfnNavigate("InventoryList"); };
 this.onNavSupplierList = function() {};
@@ -63,7 +67,8 @@ this.onSuppliersLoaded = function(serviceId, errorCode, errorMessage) {
 this.refreshPageLabel = function() {
   var total = this.dsSupplierSummary.rowcount ? Number(this.dsSupplierSummary.getColumn(0, "TotalSuppliers")) : 0;
   var pages = Math.max(1, Math.ceil(total / this.pageSize));
-  this.staCount.set_text(total + " suppliers · Page " + (this.page + 1) + " of " + pages);
+  this.staCount.set_text(this.getOffsetWidth() < 760 ? (this.page + 1) + "/" + pages + " · " + total :
+    total + " suppliers · Page " + (this.page + 1) + " of " + pages);
 };
 this.onSuppliersChanged = function(obj, e) {
   if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
@@ -79,12 +84,9 @@ this.onSearch = function() {
   this.refresh();
 };
 this.onFilter = function() {
-  var filters = ["", "Taking return", "Not taking return"];
-  this.typeFilter = filters[(filters.indexOf(this.typeFilter) + 1) % filters.length];
-  this.btnFilter.set_text(this.typeFilter || "Filters");
-  this.page = 0;
-  this.refresh();
+  this.gfnPopup("ColumnChooser", 360, 480, "onColumnChooserClosed", { pvGrid: this.grdSuppliers });
 };
+this.onColumnChooserClosed = function(serviceId, value) {};
 this.onSort = function(obj, e) {
   var fields = ["SupplierName", "Product", "Contact", "Email", "Type", "OnTheWay"];
   if (!e || e.cell < 0 || !fields[e.cell]) return;

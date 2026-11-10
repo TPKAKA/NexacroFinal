@@ -47,7 +47,7 @@ for path in files:
                 errors.append(f'{path}: binding references missing Dataset {dataset_id}')
             elif dataset.find(f'./ColumnInfo/Column[@id="{column_id}"]') is None:
                 errors.append(f'{path}: binding references missing column {dataset_id}.{column_id}')
-assert len(forms) == 7, f'Expected 7 forms, found {len(forms)}'
+assert len(forms) == 8, f'Expected 8 forms, found {len(forms)}'
 application = ET.parse(root / 'Application.xadl').getroot().find('./Application')
 if application is None or application.get('checkversion') != 'true' or not application.get('version'):
     errors.append('Application.xadl: WRE CheckVersion/version is not configured')

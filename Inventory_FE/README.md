@@ -11,7 +11,7 @@ python build_frontend.py
 python validate_frontend.py
 ```
 
-The checked-in `.xfdl`, `.xjs`, `.xcss`, `.xadl`, and `.xml` files are the Nexacro source files. `build_frontend.py` recreates the seven forms from the generator and applies the common Dataset definitions, bindings, event handlers, services, and layout. Edit the generator files (`build_frontend.py`, `figma_layout.py`, and `inventory_codegen.py`) when changing generated forms, then rebuild and validate so source and generated output stay aligned.
+The checked-in `.xfdl`, `.xjs`, `.xcss`, `.xadl`, and `.xml` files are the Nexacro source files. `build_frontend.py` recreates the eight forms from the generator and applies the common Dataset definitions, bindings, event handlers, services, and layout. Edit the generator files (`build_frontend.py`, `figma_layout.py`, and `inventory_codegen.py`) when changing generated forms, then rebuild and validate so source and generated output stay aligned.
 
 ## Run the API
 

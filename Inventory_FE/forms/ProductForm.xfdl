@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FDL version="2.1"><Form id="ProductForm" width="500" height="800" titletext="ProductForm" onload="onLoad">
+<FDL version="2.1"><Form id="ProductForm" width="500" height="800" titletext="ProductForm" onload="onLoad" onsize="onResponsiveSize" scrolltype="vertical" scrollbartype="none none">
 <Layouts><Layout width="500" height="800">
 <Static id="staFormTitle" left="28" top="23" width="440" height="40" text="New Product" cssclass="popupTitle"/>
 <Static id="staImageBox" left="140" top="70" width="90" height="84" text="" cssclass="uploadBox"/>
@@ -31,6 +31,7 @@ or Browse image" cssclass="uploadHint"/>
 this.isEditing = false;
 this.imageUploaded = false;
 this.onLoad = function() {
+  this.onResponsiveSize();
   var app = nexacro.getApplication();
   this.isEditing = !this.gfnEmpty(app.editProductId);
   this.gfnBindRecord(this.dsProduct, {
@@ -47,6 +48,7 @@ this.onLoad = function() {
       "dsProduct=dsProduct dsProductDetail=dsProductDetail", "", "onEditProductLoaded");
   }
 };
+this.onResponsiveSize = function() { this.gfnResponsiveModal(false); };
 this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
   this.gfnCacheCodes();

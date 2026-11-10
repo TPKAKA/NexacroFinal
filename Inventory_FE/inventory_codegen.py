@@ -239,9 +239,14 @@ this.gfnTransaction = function(id, path, input, output, args, callback) {
  * @param {number} width Popup width in pixels.
  * @param {number} height Popup height in pixels.
  * @param {string} callback Parent form callback name.
+ * @param {Object<string, *>} [args] Values forwarded to the popup form.
  * @returns {void}
  */
-this.gfnPopup = function(name, width, height, callback) {
+this.gfnPopup = function(name, width, height, callback, args) {
+  var viewWidth = this.getOffsetWidth();
+  var viewHeight = this.getOffsetHeight();
+  if (viewWidth > 0) width = Math.min(width, Math.max(240, viewWidth - 24));
+  if (viewHeight > 0) height = Math.min(height, Math.max(300, viewHeight - 40));
   var child = new ChildFrame();
   child.init("popup" + name, 0, 0, width, height);
   child.formurl = "forms::" + name + ".xfdl";
@@ -250,7 +255,476 @@ this.gfnPopup = function(name, width, height, callback) {
   child.dragmovetype = "all";
   child.background = "#FFFFFF";
   child.border = "1px solid #DCE5E2";
-  child.showModal(this.getOwnerFrame(), {}, this, callback);
+  child.showModal(this.getOwnerFrame(), args || {}, this, callback);
+};
+/**
+ * Set the position and size of a component in this Form.
+ * @param {string} id Component id.
+ * @param {number} left Left position in pixels.
+ * @param {number} top Top position in pixels.
+ * @param {number} width Component width in pixels.
+ * @param {number} height Component height in pixels.
+ * @returns {void}
+ */
+this.gfnResponsiveBounds = function(id, left, top, width, height) {
+  var component = this[id];
+  if (!component) return;
+  component.set_left(Math.round(left));
+  component.set_top(Math.round(top));
+  component.set_width(Math.max(1, Math.round(width)));
+  component.set_height(Math.max(1, Math.round(height)));
+};
+/**
+ * Change a component's visibility when applying a responsive layout.
+ * @param {string} id Component id.
+ * @param {boolean} visible Whether the component should be visible.
+ * @returns {void}
+ */
+this.gfnResponsiveVisible = function(id, visible) {
+  var component = this[id];
+  if (component) component.set_visible(!!visible);
+};
+/**
+ * Apply the shared navigation and top-bar layout for the current Form size.
+ * @param {string} active Active page name.
+ * @param {boolean} hasSearch Whether this screen has an active search field.
+ * @returns {Object<string, *>} Responsive viewport measurements.
+ */
+this.gfnResponsiveShell = function(active, hasSearch) {
+  var width = Number(this.getOffsetWidth()) || 1440;
+  var height = Number(this.getOffsetHeight()) || 960;
+  var mobile = width < 760;
+  var compact = width < 1100;
+  var shortViewport = height < 760;
+  var sidebarWidth = mobile ? 0 : (compact ? 220 : 280);
+  var topbarHeight = mobile ? 64 : 100;
+  var left = mobile ? 12 : sidebarWidth + 32;
+  var contentWidth = Math.max(260, width - left - (mobile ? 12 : 32));
+  var navIds = ["btnDashboard", "btnInventoryList", "btnReports", "btnSupplierList",
+    "btnOrders", "btnManageStore", "btnSettings", "btnLogout"];
+  var navTops = [135, 202, 269, 336, 403, 470, height - 146, height - 84];
+  var navWidths = mobile ? 0 : sidebarWidth - (compact ? 32 : 64);
+  var navLeft = compact ? 16 : 32;
+  this.gfnResponsiveBounds("staSidebarBg", 0, 0, Math.max(1, sidebarWidth), height);
+  this.gfnResponsiveVisible("staSidebarBg", !mobile);
+  this.gfnResponsiveBounds("staTopbarBg", sidebarWidth, 0, Math.max(1, width - sidebarWidth), topbarHeight);
+  this.gfnResponsiveVisible("staTopbarBg", true);
+  this.gfnResponsiveVisible("staLogoMark", !mobile && !compact);
+  this.gfnResponsiveVisible("staBrand", !mobile && !compact);
+  this.gfnResponsiveVisible("staBell", !mobile);
+  this.gfnResponsiveVisible("staAvatar", !mobile);
+  for (var i = 0; i < navIds.length; i++) {
+    var hideOnShortViewport = shortViewport && navIds[i] !== "btnInventoryList" &&
+      navIds[i] !== "btnSupplierList" && navIds[i] !== "btnLogout";
+    this.gfnResponsiveVisible(navIds[i], !mobile && !hideOnShortViewport);
+    if (!mobile) this.gfnResponsiveBounds(navIds[i], navLeft, navTops[i], navWidths, 48);
+  }
+  if (!mobile && shortViewport) {
+    this.gfnResponsiveBounds("btnInventoryList", navLeft, 135, navWidths, 48);
+    this.gfnResponsiveBounds("btnSupplierList", navLeft, 202, navWidths, 48);
+    this.gfnResponsiveBounds("btnLogout", navLeft, height - 84, navWidths, 48);
+  }
+  if (mobile) {
+    var navWidth = Math.min(112, Math.max(78, Math.floor((width - 100) / 2)));
+    this.gfnResponsiveVisible("btnInventoryList", true);
+    this.gfnResponsiveVisible("btnSupplierList", true);
+    this.gfnResponsiveVisible("btnLogout", true);
+    this.btnInventoryList.set_text("Inventory");
+    this.btnSupplierList.set_text("Suppliers");
+    this.btnLogout.set_text("Log out");
+    this.btnInventoryList.set_cssclass(active === "InventoryList" || active === "ProductDetail" ? "navCompactActive" : "navCompact");
+    this.btnSupplierList.set_cssclass(active === "SupplierList" ? "navCompactActive" : "navCompact");
+    this.btnLogout.set_cssclass("navCompact");
+    this.gfnResponsiveBounds("btnInventoryList", 8, 10, navWidth, 44);
+    this.gfnResponsiveBounds("btnSupplierList", 16 + navWidth, 10, navWidth, 44);
+    this.gfnResponsiveBounds("btnLogout", width - 74, 10, 66, 44);
+    if (hasSearch) {
+      var searchWidth = Math.max(120, width - 104);
+      this.gfnResponsiveVisible("edtSearch", true);
+      this.gfnResponsiveVisible("btnSearch", true);
+      this.edtSearch.set_cssclass("globalSearch");
+      this.btnSearch.set_text("Go");
+      this.gfnResponsiveBounds("edtSearch", 12, 74, searchWidth, 38);
+      this.gfnResponsiveBounds("btnSearch", 20 + searchWidth, 74, Math.max(64, width - searchWidth - 32), 38);
+    } else {
+      this.gfnResponsiveVisible("staSearchPlaceholder", false);
+    }
+  } else {
+    this.gfnResponsiveBounds("staLogoMark", sidebarWidth + 36, 28, 32, 42);
+    this.gfnResponsiveBounds("staBrand", sidebarWidth + 76, 31, 170, 40);
+    this.gfnResponsiveBounds("staBell", width - 110, 29, 35, 42);
+    this.gfnResponsiveBounds("staAvatar", width - 60, 30, 38, 38);
+    this.btnInventoryList.set_text("Inventory");
+    this.btnSupplierList.set_text("Suppliers");
+    this.btnLogout.set_text("Log out");
+    this.btnInventoryList.set_cssclass(active === "InventoryList" || active === "ProductDetail" ? "navActive" : "nav");
+    this.btnSupplierList.set_cssclass(active === "SupplierList" ? "navActive" : "nav");
+    this.btnLogout.set_cssclass("nav");
+    if (hasSearch) {
+      var searchLeft = sidebarWidth + (compact ? 24 : 38);
+      var searchWidthDesktop = compact
+        ? Math.min(250, Math.max(120, width - sidebarWidth - 260))
+        : Math.min(318, Math.max(180, width - sidebarWidth - 290));
+      this.gfnResponsiveVisible("edtSearch", true);
+      this.gfnResponsiveVisible("btnSearch", true);
+      this.edtSearch.set_cssclass("globalSearch");
+      this.btnSearch.set_text("Search");
+      this.gfnResponsiveBounds("edtSearch", searchLeft, 29, searchWidthDesktop, 42);
+      this.gfnResponsiveBounds("btnSearch", searchLeft + searchWidthDesktop + 8, 29, 78, 42);
+    } else {
+      this.gfnResponsiveVisible("staSearchPlaceholder", true);
+      this.gfnResponsiveBounds("staSearchPlaceholder", sidebarWidth + (compact ? 24 : 38), 29,
+        compact ? Math.min(250, Math.max(120, width - sidebarWidth - 260))
+          : Math.min(324, Math.max(180, width - sidebarWidth - 290)), 42);
+    }
+  }
+  return { width: width, height: height, mobile: mobile, compact: compact,
+    sidebarWidth: sidebarWidth, contentLeft: left, contentWidth: contentWidth,
+    bodyTop: mobile && hasSearch ? 124 : (mobile ? 80 : 124) };
+};
+/**
+ * Set the Grid column visibility preset while preserving each original column width.
+ * @param {nexacro.Grid} grid Grid to update.
+ * @param {number[]} visibleIndexes Format-column indexes to show.
+ * @returns {void}
+ */
+this.gfnResponsiveGridColumns = function(grid, visibleIndexes) {
+  if (!grid) return;
+  var count = grid.getFormatColCount();
+  if (!grid._responsiveBaseColumnSizes) {
+    grid._responsiveBaseColumnSizes = [];
+    for (var i = 0; i < count; i++) {
+      var size = Number(grid.getFormatColProperty(i, "size"));
+      grid._responsiveBaseColumnSizes[i] = size > 0 ? size : 120;
+    }
+  }
+  var visible = {};
+  for (var j = 0; j < visibleIndexes.length; j++) visible[visibleIndexes[j]] = true;
+  grid.set_enableredraw(false);
+  for (var column = 0; column < count; column++) {
+    grid.setFormatColProperty(column, "size", visible[column] ? grid._responsiveBaseColumnSizes[column] : 0);
+  }
+  grid.set_enableredraw(true);
+};
+/**
+ * Resize the Login and Sign Up forms for desktop and narrow screens.
+ * @param {boolean} signup True for Sign Up, false for Login.
+ * @returns {void}
+ */
+this.gfnResponsiveAuth = function(signup) {
+  var width = Number(this.getOffsetWidth()) || 1440;
+  var height = Number(this.getOffsetHeight()) || 960;
+  var mobile = width < 900 || height < 720;
+  this.gfnResponsiveBounds("staAuthCanvas", 0, 0, width, height);
+  this.gfnResponsiveVisible("staLogoMark", !mobile);
+  this.gfnResponsiveVisible("staBrandLarge", !mobile);
+  if (mobile) {
+    var formWidth = Math.min(440, Math.max(240, width - 32));
+    var left = Math.max(16, Math.floor((width - formWidth) / 2));
+    var top = Math.max(16, Math.floor((height - (signup ? 650 : 540)) / 2));
+    this.gfnResponsiveVisible("staSmallMark", true);
+    this.gfnResponsiveBounds("staSmallMark", Math.floor((width - 48) / 2), top, 48, 48);
+    if (signup) {
+      this.gfnResponsiveBounds("staTitle", left, top + 54, formWidth, 42);
+      this.gfnResponsiveBounds("staHint", left, top + 96, formWidth, 26);
+      var signupFields = ["Name", "Email", "Password", "Confirm"];
+      var signupTops = [top + 128, top + 202, top + 276, top + 350];
+      for (var s = 0; s < signupFields.length; s++) {
+        this.gfnResponsiveBounds("sta" + signupFields[s], left, signupTops[s], formWidth, 20);
+        this.gfnResponsiveBounds("edt" + signupFields[s], left, signupTops[s] + 23, formWidth, 40);
+      }
+      this.gfnResponsiveBounds("staPasswordHelp", left, top + 418, formWidth, 18);
+      this.gfnResponsiveBounds("btnCreate", left, top + 446, formWidth, 44);
+      this.gfnResponsiveBounds("staBackHint", left, top + 506, Math.max(150, formWidth - 92), 25);
+      this.gfnResponsiveBounds("btnBack", left + formWidth - 82, top + 506, 82, 25);
+    } else {
+      this.gfnResponsiveBounds("staHello", left, top + 58, formWidth, 44);
+      this.gfnResponsiveBounds("staHint", left, top + 104, formWidth, 26);
+      this.gfnResponsiveBounds("staEmail", left, top + 148, formWidth, 20);
+      this.gfnResponsiveBounds("edtEmail", left, top + 172, formWidth, 40);
+      this.gfnResponsiveBounds("staPassword", left, top + 228, formWidth, 20);
+      this.gfnResponsiveBounds("edtPassword", left, top + 252, formWidth, 40);
+      this.gfnResponsiveBounds("chkRemember", left, top + 308, Math.max(150, formWidth - 120), 28);
+      this.gfnResponsiveBounds("btnForgot", left + formWidth - 128, top + 308, 128, 28);
+      this.gfnResponsiveBounds("btnLogin", left, top + 354, formWidth, 44);
+      this.gfnResponsiveBounds("staSignUpHint", left, top + 414, Math.max(150, formWidth - 92), 25);
+      this.gfnResponsiveBounds("btnSignUp", left + formWidth - 82, top + 414, 82, 25);
+    }
+    return;
+  }
+  var formLeft = Math.max(520, Math.min(825, Math.round(width * 0.573)));
+  var formWidthDesktop = Math.max(280, Math.min(360, width - formLeft - 24));
+  var offsetY = Math.min(0, height - 960);
+  var logoLeft = Math.round(width * 0.222);
+  var logoTop = Math.max(36, Math.round((height - 250) / 2));
+  this.gfnResponsiveBounds("staLogoMark", logoLeft, logoTop, 150, 160);
+  this.gfnResponsiveBounds("staBrandLarge", logoLeft - 50, logoTop + 165, 280, 65);
+  this.gfnResponsiveVisible("staSmallMark", true);
+  this.gfnResponsiveBounds("staSmallMark", formLeft + Math.floor(formWidthDesktop / 2) - 12,
+    (signup ? 254 : 277) + offsetY, 48, 51);
+  if (signup) {
+    this.gfnResponsiveBounds("staTitle", formLeft - 40, 325 + offsetY, formWidthDesktop + 80, 55);
+    this.gfnResponsiveBounds("staHint", formLeft, 376 + offsetY, formWidthDesktop + 40, 28);
+    var desktopSignupFields = ["Name", "Email", "Password", "Confirm"];
+    var desktopSignupTops = [425, 510, 595, 710];
+    for (var d = 0; d < desktopSignupFields.length; d++) {
+      this.gfnResponsiveBounds("sta" + desktopSignupFields[d], formLeft, desktopSignupTops[d] + offsetY, formWidthDesktop, 23);
+      this.gfnResponsiveBounds("edt" + desktopSignupFields[d], formLeft, desktopSignupTops[d] + 28 + offsetY, formWidthDesktop, 45);
+    }
+    this.gfnResponsiveBounds("staPasswordHelp", formLeft, 671 + offsetY, formWidthDesktop, 18);
+    this.gfnResponsiveBounds("btnCreate", formLeft, 810 + offsetY, formWidthDesktop, 46);
+    this.gfnResponsiveBounds("staBackHint", formLeft + 58, 869 + offsetY, 230, 25);
+    this.gfnResponsiveBounds("btnBack", formLeft + formWidthDesktop - 90, 869 + offsetY, 85, 25);
+  } else {
+    this.gfnResponsiveBounds("staHello", formLeft - 40, 340 + offsetY, formWidthDesktop + 80, 55);
+    this.gfnResponsiveBounds("staHint", formLeft, 391 + offsetY, formWidthDesktop + 40, 28);
+    this.gfnResponsiveBounds("staEmail", formLeft, 442 + offsetY, formWidthDesktop, 23);
+    this.gfnResponsiveBounds("edtEmail", formLeft, 470 + offsetY, formWidthDesktop, 45);
+    this.gfnResponsiveBounds("staPassword", formLeft, 535 + offsetY, formWidthDesktop, 23);
+    this.gfnResponsiveBounds("edtPassword", formLeft, 563 + offsetY, formWidthDesktop, 45);
+    this.gfnResponsiveBounds("chkRemember", formLeft, 632 + offsetY, 218, 28);
+    this.gfnResponsiveBounds("btnForgot", formLeft + formWidthDesktop - 135, 632 + offsetY, 135, 28);
+    this.gfnResponsiveBounds("btnLogin", formLeft, 684 + offsetY, formWidthDesktop, 46);
+    this.gfnResponsiveBounds("staSignUpHint", formLeft + 58, 747 + offsetY, 225, 25);
+    this.gfnResponsiveBounds("btnSignUp", formLeft + formWidthDesktop - 103, 747 + offsetY, 103, 25);
+  }
+};
+/**
+ * Reflow the Inventory list, summary metrics, actions, and Grid.
+ * @param {Object<string, *>} layout Measurements from gfnResponsiveShell.
+ * @returns {void}
+ */
+this.gfnResponsiveInventoryList = function(layout) {
+  var left = layout.contentLeft, width = layout.contentWidth, top = layout.bodyTop;
+  var mobile = layout.mobile, height = layout.height;
+  var compactActions = mobile || width < 560;
+  var twoColumns = mobile || width < 700;
+  var summaryHeight = twoColumns ? 188 : 186;
+  this.gfnResponsiveBounds("staOverallCard", left, top, width, summaryHeight);
+  this.gfnResponsiveBounds("staOverallTitle", left + 18, top + 14, Math.max(200, width - 36), 32);
+  var metricLabels = ["Categories", "Total", "TopSelling", "Low"];
+  var metricValues = ["Categories", "Total", "TopSelling", "Low"];
+  var metricNotes = ["Categories", "Total", "TopSelling", "Low"];
+  if (twoColumns) {
+    var cellWidth = Math.max(110, Math.floor((width - 48) / 2));
+    for (var i = 0; i < 4; i++) {
+      var row = i < 2 ? 0 : 1;
+      var column = i % 2;
+      var x = left + 18 + column * (cellWidth + 12);
+      var y = top + 50 + row * 68;
+      this.gfnResponsiveBounds("labsta" + metricLabels[i], x, y, cellWidth, 18);
+      this.gfnResponsiveBounds("sta" + metricValues[i], x, y + 20, cellWidth, 28);
+      this.gfnResponsiveVisible("notesta" + metricNotes[i], false);
+    }
+    this.gfnResponsiveVisible("staOut", false);
+  } else {
+    var metricWidth = Math.floor((width - 36) / 4);
+    for (var m = 0; m < 4; m++) {
+      var metricX = left + 18 + m * metricWidth;
+      this.gfnResponsiveBounds("labsta" + metricLabels[m], metricX, top + 71, metricWidth - 8, 24);
+      this.gfnResponsiveBounds("sta" + metricValues[m], metricX, top + 98, metricWidth - 8, 40);
+      this.gfnResponsiveBounds("notesta" + metricNotes[m], metricX, top + 143, metricWidth - 8, 22);
+      this.gfnResponsiveVisible("notesta" + metricNotes[m], true);
+    }
+    this.gfnResponsiveBounds("staOut", left + width - 108, top + 116, 85, 28);
+    this.gfnResponsiveVisible("staOut", true);
+  }
+  var productTop = top + summaryHeight + (twoColumns ? 14 : 20);
+  var cardHeight = Math.max(360, height - productTop - 49);
+  this.gfnResponsiveBounds("staProductsCard", left, productTop, width, cardHeight);
+  this.gfnResponsiveBounds("staProductsTitle", left + 18, productTop + (mobile ? 12 : 16), Math.max(120, width - 36), 32);
+  if (compactActions) {
+    var actionWidth = Math.max(66, Math.floor((width - 36) / 3));
+    var actionGap = 6;
+    var actionLeft = left + 12;
+    this.btnAdd.set_text("Add");
+    this.btnFilter.set_text("Columns");
+    this.btnDownload.set_text("Export");
+    this.gfnResponsiveBounds("btnAdd", actionLeft, productTop + 48, actionWidth, 38);
+    this.gfnResponsiveBounds("btnFilter", actionLeft + actionWidth + actionGap, productTop + 48, actionWidth, 38);
+    this.gfnResponsiveBounds("btnDownload", actionLeft + (actionWidth + actionGap) * 2, productTop + 48,
+      Math.max(60, width - (actionLeft - left) - (actionWidth + actionGap) * 2 - 12), 38);
+  } else {
+    this.btnAdd.set_text("Add Product");
+    this.btnFilter.set_text("Columns");
+    this.btnDownload.set_text("Download all");
+    var downloadLeft = left + width - 18 - 118;
+    var filterLeft = downloadLeft - 10 - 105;
+    var addLeft = filterLeft - 10 - 130;
+    this.gfnResponsiveBounds("btnAdd", addLeft, productTop + 15, 130, 42);
+    this.gfnResponsiveBounds("btnFilter", filterLeft, productTop + 15, 105, 42);
+    this.gfnResponsiveBounds("btnDownload", downloadLeft, productTop + 15, 118, 42);
+  }
+  var gridTop = productTop + (compactActions ? 96 : 71);
+  var footerTop = productTop + cardHeight - 44;
+  this.gfnResponsiveBounds("grdProducts", left + 18, gridTop, Math.max(120, width - 36),
+    Math.max(120, footerTop - gridTop - 8));
+  this.gfnResponsiveBounds("btnPrev", left + 18, footerTop, 92, 35);
+  this.gfnResponsiveBounds("staPage", left + 116, footerTop + 2, Math.max(80, width - 232), 30);
+  this.gfnResponsiveBounds("btnNext", left + width - 110, footerTop, 92, 35);
+  var compactGrid = mobile || width < 760;
+  if (this._responsiveGridMode !== compactGrid) {
+    this.gfnResponsiveGridColumns(this.grdProducts, compactGrid ? [0, 2, 5] : [0, 1, 2, 3, 4, 5]);
+    this._responsiveGridMode = compactGrid;
+  }
+};
+/**
+ * Reflow the Supplier list and its Grid for the current viewport.
+ * @param {Object<string, *>} layout Measurements from gfnResponsiveShell.
+ * @returns {void}
+ */
+this.gfnResponsiveSupplierList = function(layout) {
+  var left = layout.contentLeft, width = layout.contentWidth, top = layout.bodyTop;
+  var mobile = layout.mobile, height = layout.height;
+  var compactActions = mobile || width < 560;
+  var cardHeight = Math.max(480, height - top - 49);
+  this.gfnResponsiveBounds("staSuppliersCard", left, top, width, cardHeight);
+  this.gfnResponsiveBounds("staSuppliersTitle", left + 18, top + 16, Math.max(140, width - 36), 34);
+  if (compactActions) {
+    var actionWidth = Math.max(66, Math.floor((width - 36) / 3));
+    var actionLeft = left + 12, gap = 6;
+    this.btnAdd.set_text("Add");
+    this.btnFilter.set_text("Columns");
+    this.btnDownload.set_text("Export");
+    this.gfnResponsiveBounds("btnAdd", actionLeft, top + 50, actionWidth, 38);
+    this.gfnResponsiveBounds("btnFilter", actionLeft + actionWidth + gap, top + 50, actionWidth, 38);
+    this.gfnResponsiveBounds("btnDownload", actionLeft + (actionWidth + gap) * 2, top + 50,
+      Math.max(60, width - (actionLeft - left) - (actionWidth + gap) * 2 - 12), 38);
+  } else {
+    this.btnAdd.set_text("Add Supplier");
+    this.btnFilter.set_text("Columns");
+    this.btnDownload.set_text("Download all");
+    var downloadLeft = left + width - 18 - 118;
+    var filterLeft = downloadLeft - 10 - 105;
+    var addLeft = filterLeft - 10 - 130;
+    this.gfnResponsiveBounds("btnAdd", addLeft, top + 15, 130, 42);
+    this.gfnResponsiveBounds("btnFilter", filterLeft, top + 15, 105, 42);
+    this.gfnResponsiveBounds("btnDownload", downloadLeft, top + 15, 118, 42);
+  }
+  var gridTop = top + (compactActions ? 100 : 73);
+  var footerTop = top + cardHeight - 44;
+  this.gfnResponsiveBounds("grdSuppliers", left + 18, gridTop, Math.max(120, width - 36),
+    Math.max(120, footerTop - gridTop - 8));
+  this.gfnResponsiveBounds("btnPrev", left + 18, footerTop, 92, 35);
+  this.gfnResponsiveBounds("staCount", left + 116, footerTop + 2, Math.max(80, width - 232), 30);
+  this.gfnResponsiveBounds("btnNext", left + width - 110, footerTop, 92, 35);
+  var compactGrid = mobile || width < 760;
+  if (this._responsiveGridMode !== compactGrid) {
+    this.gfnResponsiveGridColumns(this.grdSuppliers, compactGrid ? [0, 2, 4] : [0, 1, 2, 3, 4, 5]);
+    this._responsiveGridMode = compactGrid;
+  }
+};
+/**
+ * Reflow Product Detail content into a single column on narrow screens.
+ * @param {Object<string, *>} layout Measurements from gfnResponsiveShell.
+ * @returns {void}
+ */
+this.gfnResponsiveDetail = function(layout) {
+  var left = layout.contentLeft, width = layout.contentWidth, top = layout.bodyTop;
+  var height = layout.height;
+  var singleColumn = layout.mobile || width < 920;
+  var cardHeight = singleColumn ? Math.max(900, height - top - 24) : Math.max(640, height - top - 49);
+  this.gfnResponsiveBounds("staDetailCard", left, top, width, cardHeight);
+  if (singleColumn) {
+    var innerLeft = left + 16, innerWidth = Math.max(220, width - 32);
+    this.gfnResponsiveBounds("staName", innerLeft, top + 14, innerWidth, 42);
+    this.gfnResponsiveBounds("btnEdit", innerLeft, top + 60, 82, 36);
+    this.gfnResponsiveBounds("btnDownload", innerLeft + 90, top + 60, 94, 36);
+    var tabNames = ["Overview", "Purchases", "Adjustments", "History"];
+    var tabShort = ["Overview", "Purchases", "Adjust.", "History"];
+    var tabWidth = Math.floor(innerWidth / 4);
+    for (var t = 0; t < 4; t++) {
+      var tab = this["btn" + tabNames[t]];
+      if (tab) tab.set_text(layout.mobile ? tabShort[t] : tabNames[t]);
+      this.gfnResponsiveBounds("btn" + tabNames[t], innerLeft + t * tabWidth, top + 106, tabWidth, 38);
+    }
+    this.gfnResponsiveBounds("staDetailsTitle", innerLeft, top + 154, innerWidth, 28);
+    this.gfnResponsiveBounds("staId", innerLeft, top + 186, innerWidth, 28);
+    this.gfnResponsiveBounds("staInfo", innerLeft, top + 220, innerWidth, 108);
+    this.gfnResponsiveBounds("staSupplierTitle", innerLeft, top + 336, innerWidth, 28);
+    this.gfnResponsiveBounds("staSupplier", innerLeft, top + 366, innerWidth, 54);
+    this.gfnResponsiveBounds("staStockTitle", innerLeft, top + 424, innerWidth, 28);
+    this.gfnResponsiveBounds("grdStockLocations", innerLeft, top + 456, innerWidth, 92);
+    this.gfnResponsiveBounds("staImage", innerLeft, top + 562, 80, 80);
+    this.gfnResponsiveBounds("staStatus", innerLeft + 92, top + 560, Math.max(100, innerWidth - 92), 30);
+    this.gfnResponsiveBounds("staTab", innerLeft + 92, top + 594, Math.max(100, innerWidth - 92), 50);
+    this.gfnResponsiveBounds("staActivityTitle", innerLeft, top + 650, innerWidth, 28);
+    this.gfnResponsiveBounds("grdActivities", innerLeft, top + 682, innerWidth, 188);
+    this.gfnResponsiveBounds("btnBack", innerLeft, top + cardHeight - 48, 150, 36);
+    return;
+  }
+  var bodyLeft = left + 42;
+  var activityLeft = left + width - 436;
+  this.gfnResponsiveBounds("staName", left + 18, top + 16, width - 234, 42);
+  this.gfnResponsiveBounds("btnEdit", left + width - 198, top + 17, 80, 38);
+  this.gfnResponsiveBounds("btnDownload", left + width - 109, top + 17, 93, 38);
+  var tabNamesWide = ["Overview", "Purchases", "Adjustments", "History"];
+  for (var wide = 0; wide < 4; wide++) {
+    this["btn" + tabNamesWide[wide]].set_text(tabNamesWide[wide]);
+    this.gfnResponsiveBounds("btn" + tabNamesWide[wide], left + 18 + wide * 147, top + 66, 138, 44);
+  }
+  this.gfnResponsiveBounds("staDetailsTitle", bodyLeft, top + 131, 430, 32);
+  this.gfnResponsiveBounds("staId", bodyLeft, top + 183, 520, 32);
+  this.gfnResponsiveBounds("staInfo", bodyLeft, top + 226, activityLeft - bodyLeft - 48, 190);
+  this.gfnResponsiveBounds("staSupplierTitle", bodyLeft, top + 436, 430, 35);
+  this.gfnResponsiveBounds("staSupplier", bodyLeft, top + 481, Math.min(580, activityLeft - bodyLeft - 48), 85);
+  this.gfnResponsiveBounds("staStockTitle", bodyLeft, top + 596, 430, 35);
+  this.gfnResponsiveBounds("grdStockLocations", bodyLeft, top + 638, Math.min(610, activityLeft - bodyLeft - 48), 95);
+  this.gfnResponsiveBounds("staImage", left + width - 258, top + 142, 170, 190);
+  this.gfnResponsiveBounds("staStatus", left + width - 368, top + 366, 260, 35);
+  this.gfnResponsiveBounds("staTab", left + width - 428, top + 416, 360, 75);
+  this.gfnResponsiveBounds("staActivityTitle", activityLeft, top + 436, 420, 35);
+  this.gfnResponsiveBounds("grdActivities", activityLeft, top + 461, Math.max(200, left + width - activityLeft - 18),
+    Math.max(180, cardHeight - 490));
+  this.gfnResponsiveBounds("btnBack", left + 18, top + cardHeight - 48, 160, 35);
+};
+/**
+ * Reflow Product and Supplier entry popup forms for narrow windows.
+ * @param {boolean} supplier True when resizing the Supplier form.
+ * @returns {void}
+ */
+this.gfnResponsiveModal = function(supplier) {
+  var width = Number(this.getOffsetWidth()) || 500;
+  var height = Number(this.getOffsetHeight()) || (supplier ? 730 : 800);
+  var mobile = width < 460;
+  if (mobile) {
+    var contentWidth = Math.max(220, width - 32);
+    this.gfnResponsiveBounds("staFormTitle", 16, 14, width - 32, 36);
+    this.gfnResponsiveBounds("staImageBox", 16, 58, 54, 48);
+    this.gfnResponsiveBounds("staImageGlyph", 16, 58, 54, 48);
+    this.gfnResponsiveBounds("staImage", 78, 58, Math.max(120, width - 94), 24);
+    this.gfnResponsiveBounds("uplImage", 78, 86, Math.max(120, width - 94), 30);
+    var fields = supplier ? ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"] :
+      ["ProductName", "ProductID", "Category", "BuyingPrice", "Quantity", "Unit", "ExpiryDate", "Threshold"];
+    var start = 130, step = 62;
+    for (var i = 0; i < fields.length; i++) {
+      var y = start + i * step;
+      this.gfnResponsiveBounds("sta" + fields[i], 16, y, contentWidth, 20);
+      this.gfnResponsiveBounds("edt" + fields[i], 16, y + 21, contentWidth, 36);
+    }
+    var footerTop = Math.max(start + fields.length * step + 10, height - 50);
+    var buttonWidth = Math.max(86, Math.floor((width - 48) / 2));
+    this.gfnResponsiveBounds("btnCancel", 16, footerTop, buttonWidth, 36);
+    this.gfnResponsiveBounds("btnSave", 32 + buttonWidth, footerTop, buttonWidth, 36);
+    return;
+  }
+  this.gfnResponsiveBounds("staFormTitle", 28, 23, width - 56, 40);
+  this.gfnResponsiveBounds("staImageBox", Math.round(width * 0.28), 70, 90, 84);
+  this.gfnResponsiveBounds("staImageGlyph", Math.round(width * 0.28) + 22, 83, 48, 55);
+  this.gfnResponsiveBounds("staImage", Math.round(width * 0.48), 82, width * 0.44, 50);
+  this.gfnResponsiveBounds("uplImage", Math.round(width * 0.48), 126, width * 0.44, 30);
+  var modalFields = supplier ? ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"] :
+    ["ProductName", "ProductID", "Category", "BuyingPrice", "Quantity", "Unit", "ExpiryDate", "Threshold"];
+  var modalStart = supplier ? 185 : 172, modalStep = supplier ? 72 : 67;
+  for (var j = 0; j < modalFields.length; j++) {
+    var modalY = modalStart + j * modalStep;
+    this.gfnResponsiveBounds("sta" + modalFields[j], 28, modalY, 150, 40);
+    this.gfnResponsiveBounds("edt" + modalFields[j], 188, modalY, Math.max(180, width - 220), 42);
+  }
+  var lastFieldTop = modalStart + (modalFields.length - 1) * modalStep;
+  var desktopFooter = Math.max(lastFieldTop + 54, height - 65);
+  this.gfnResponsiveBounds("btnCancel", width - 233, desktopFooter, 94, 40);
+  this.gfnResponsiveBounds("btnSave", width - 130, desktopFooter, 98, 40);
 };
 /**
  * Download a protected file through a Nexacro FileDownTransfer.
@@ -331,9 +805,11 @@ this.onLogoutResult = function(serviceId, errorCode, errorMessage) {
 
 LOGIN_SCRIPT = r"""
 this.onLoad = function() {
+  this.onResponsiveSize();
   this.gfnBindRecord(this.dsLogin, { Email: "", Password: "", RememberMe: "0" });
   this.gfnBindRecord(this.dsForgot, { Email: "" });
 };
+this.onResponsiveSize = function() { this.gfnResponsiveAuth(false); };
 this.onLogin = function() {
   var row = this.dsLogin.rowposition < 0 ? 0 : this.dsLogin.rowposition;
   var email = this.dsLogin.getColumn(row, "Email");
@@ -368,8 +844,10 @@ this.onLoginDatasetChanged = function(obj, e) {
 
 SIGNUP_SCRIPT = r"""
 this.onLoad = function() {
+  this.onResponsiveSize();
   this.gfnBindRecord(this.dsSignup, { Name: "", Email: "", Password: "", Confirm: "" });
 };
+this.onResponsiveSize = function() { this.gfnResponsiveAuth(true); };
 this.onCreate = function() {
   var row = this.dsSignup.rowposition < 0 ? 0 : this.dsSignup.rowposition;
   var name = this.dsSignup.getColumn(row, "Name");
@@ -402,8 +880,12 @@ this.pageSize = 10;
 this.searchText = "";
 this.statusFilter = "";
 this.onLoad = function() {
+  this.onResponsiveSize();
   if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
   this.refresh();
+};
+this.onResponsiveSize = function() {
+  this.gfnResponsiveInventoryList(this.gfnResponsiveShell("InventoryList", true));
 };
 this.onNavInventoryList = function() {};
 this.onNavSupplierList = function() { this.gfnNavigate("SupplierList"); };
@@ -430,7 +912,8 @@ this.refreshPageLabel = function() {
   var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
   var start = count ? this.page * this.pageSize + 1 : 0;
   var end = this.page * this.pageSize + count;
-  this.staPage.set_text("Showing " + start + "–" + end + " of " + total + " products");
+  this.staPage.set_text(this.getOffsetWidth() < 760 ? start + "–" + end + " / " + total :
+    "Showing " + start + "–" + end + " of " + total + " products");
 };
 this.onProductsChanged = function(obj, e) {
   if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
@@ -463,12 +946,9 @@ this.onSearch = function() {
   this.refresh();
 };
 this.onFilter = function() {
-  var filters = ["", "In stock", "Low stock", "Out of stock"];
-  this.statusFilter = filters[(filters.indexOf(this.statusFilter) + 1) % filters.length];
-  this.btnFilter.set_text(this.statusFilter || "Filters");
-  this.page = 0;
-  this.refresh();
+  this.gfnPopup("ColumnChooser", 360, 480, "onColumnChooserClosed", { pvGrid: this.grdProducts });
 };
+this.onColumnChooserClosed = function(serviceId, value) {};
 this.onPrev = function() { if (this.page > 0) { this.page--; this.refresh(); } };
 this.onNext = function() {
   var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
@@ -499,8 +979,12 @@ this.typeFilter = "";
 this.sortField = "SupplierName";
 this.sortOrder = "ASC";
 this.onLoad = function() {
+  this.onResponsiveSize();
   if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
   this.refresh();
+};
+this.onResponsiveSize = function() {
+  this.gfnResponsiveSupplierList(this.gfnResponsiveShell("SupplierList", true));
 };
 this.onNavInventoryList = function() { this.gfnNavigate("InventoryList"); };
 this.onNavSupplierList = function() {};
@@ -526,7 +1010,8 @@ this.onSuppliersLoaded = function(serviceId, errorCode, errorMessage) {
 this.refreshPageLabel = function() {
   var total = this.dsSupplierSummary.rowcount ? Number(this.dsSupplierSummary.getColumn(0, "TotalSuppliers")) : 0;
   var pages = Math.max(1, Math.ceil(total / this.pageSize));
-  this.staCount.set_text(total + " suppliers · Page " + (this.page + 1) + " of " + pages);
+  this.staCount.set_text(this.getOffsetWidth() < 760 ? (this.page + 1) + "/" + pages + " · " + total :
+    total + " suppliers · Page " + (this.page + 1) + " of " + pages);
 };
 this.onSuppliersChanged = function(obj, e) {
   if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
@@ -542,12 +1027,9 @@ this.onSearch = function() {
   this.refresh();
 };
 this.onFilter = function() {
-  var filters = ["", "Taking return", "Not taking return"];
-  this.typeFilter = filters[(filters.indexOf(this.typeFilter) + 1) % filters.length];
-  this.btnFilter.set_text(this.typeFilter || "Filters");
-  this.page = 0;
-  this.refresh();
+  this.gfnPopup("ColumnChooser", 360, 480, "onColumnChooserClosed", { pvGrid: this.grdSuppliers });
 };
+this.onColumnChooserClosed = function(serviceId, value) {};
 this.onSort = function(obj, e) {
   var fields = ["SupplierName", "Product", "Contact", "Email", "Type", "OnTheWay"];
   if (!e || e.cell < 0 || !fields[e.cell]) return;
@@ -574,6 +1056,7 @@ PRODUCT_FORM_SCRIPT = r"""
 this.isEditing = false;
 this.imageUploaded = false;
 this.onLoad = function() {
+  this.onResponsiveSize();
   var app = nexacro.getApplication();
   this.isEditing = !this.gfnEmpty(app.editProductId);
   this.gfnBindRecord(this.dsProduct, {
@@ -590,6 +1073,7 @@ this.onLoad = function() {
       "dsProduct=dsProduct dsProductDetail=dsProductDetail", "", "onEditProductLoaded");
   }
 };
+this.onResponsiveSize = function() { this.gfnResponsiveModal(false); };
 this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
   this.gfnCacheCodes();
@@ -669,6 +1153,7 @@ this.onProductDatasetChanged = function(obj, e) {
 SUPPLIER_FORM_SCRIPT = r"""
 this.imageUploaded = false;
 this.onLoad = function() {
+  this.onResponsiveSize();
   this.gfnBindRecord(this.dsSupplier, {
     SupplierID: "", SupplierName: "", Product: "", Category: "Electronics",
     BuyingPrice: "0", Contact: "", Email: "", Type: "Taking return",
@@ -676,6 +1161,7 @@ this.onLoad = function() {
   });
   this.gfnLoadCodes("onSupplierCodesLoaded");
 };
+this.onResponsiveSize = function() { this.gfnResponsiveModal(true); };
 this.onSupplierCodesLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
   this.gfnCacheCodes();
@@ -751,6 +1237,7 @@ this.onSupplierDatasetChanged = function(obj, e) {
 DETAIL_SCRIPT = r"""
 this.currentTab = "Overview";
 this.onLoad = function() {
+  this.onResponsiveSize();
   if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
   var id = nexacro.getApplication().selectedProductId;
   if (this.gfnEmpty(id)) return this.gfnNavigate("InventoryList");
@@ -759,6 +1246,9 @@ this.onLoad = function() {
     "dsProduct=dsProduct dsProductDetail=dsProductDetail dsStockLocations=dsStockLocations "
       + "dsPurchases=dsPurchases dsAdjustments=dsAdjustments dsHistory=dsHistory",
     "", "onProductDetailLoaded");
+};
+this.onResponsiveSize = function() {
+  this.gfnResponsiveDetail(this.gfnResponsiveShell("ProductDetail", false));
 };
 this.onProductDetailLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0 || !this.dsProductDetail.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
@@ -773,7 +1263,10 @@ this.showTab = function(name) {
   this.currentTab = name;
   this.staTab.set_text(name);
   var tabs = ["Overview", "Purchases", "Adjustments", "History"];
+  var compact = this.getOffsetWidth() < 920;
+  var labels = compact ? ["Overview", "Purchases", "Adjust.", "History"] : tabs;
   for (var i = 0; i < tabs.length; i++) {
+    this["btn" + tabs[i]].set_text(labels[i]);
     this["btn" + tabs[i]].set_cssclass(tabs[i] === name ? "tabActive" : "tab");
   }
   var source = name === "Purchases" ? this.dsPurchases
@@ -810,6 +1303,99 @@ this.onActivityChanged = function(obj, e) {
 """
 
 
+COLUMN_CHOOSER_SCRIPT = r"""
+this.targetGrid = null;
+this.onLoad = function() {
+  this.targetGrid = this.getOwnerFrame().pvGrid;
+  if (!this.targetGrid) {
+    this.alert("The Grid to configure is unavailable.");
+    this.close(false);
+    return;
+  }
+  var grid = this.targetGrid;
+  var count = grid.getFormatColCount();
+  if (!grid._responsiveBaseColumnSizes) {
+    grid._responsiveBaseColumnSizes = [];
+    for (var i = 0; i < count; i++) {
+      var baseSize = Number(grid.getFormatColProperty(i, "size"));
+      grid._responsiveBaseColumnSizes[i] = baseSize > 0 ? baseSize : 120;
+    }
+  }
+  this.dsColumns.clearData();
+  for (var column = 0; column < count; column++) {
+    var title = "Column " + (column + 1);
+    for (var cell = 0; cell < grid.getCellCount("head"); cell++) {
+      if (Number(grid.getCellProperty("head", cell, "col")) === column) {
+        title = String(grid.getCellProperty("head", cell, "text") || title);
+        break;
+      }
+    }
+    var row = this.dsColumns.addRow();
+    this.dsColumns.setColumn(row, "Title", title);
+    this.dsColumns.setColumn(row, "ColumnIndex", String(column));
+    this.dsColumns.setColumn(row, "Visible", Number(grid.getFormatColProperty(column, "size")) > 0 ? "1" : "0");
+  }
+  this.onResponsiveSize();
+};
+this.onResponsiveSize = function() {
+  var width = Number(this.getOffsetWidth()) || 360;
+  var height = Number(this.getOffsetHeight()) || 480;
+  this.staTitle.set_left(16);
+  this.staTitle.set_top(14);
+  this.staTitle.set_width(Math.max(200, width - 32));
+  this.staHint.set_left(16);
+  this.staHint.set_top(48);
+  this.staHint.set_width(Math.max(200, width - 32));
+  this.grdColumns.set_left(12);
+  this.grdColumns.set_top(78);
+  this.grdColumns.set_width(Math.max(220, width - 24));
+  this.grdColumns.set_height(Math.max(120, height - 138));
+  this.grdColumns.setFormatColProperty(0, "size", Math.min(72, Math.max(48, Math.round(width * 0.19))));
+  this.grdColumns.setFormatColProperty(1, "size", Math.max(120, width - this.grdColumns.getFormatColProperty(0, "size") - 36));
+  this.btnCancel.set_left(Math.max(12, width - 190));
+  this.btnCancel.set_top(height - 48);
+  this.btnApply.set_left(Math.max(12, width - 100));
+  this.btnApply.set_top(height - 48);
+};
+this.onApply = function() {
+  var grid = this.targetGrid;
+  if (!grid) return this.close(false);
+  var visibleCount = 0;
+  for (var i = 0; i < this.dsColumns.rowcount; i++) {
+    if (String(this.dsColumns.getColumn(i, "Visible")) === "1") visibleCount++;
+  }
+  if (!visibleCount) return this.alert("Keep at least one Grid column visible.");
+  grid.set_enableredraw(false);
+  for (var row = 0; row < this.dsColumns.rowcount; row++) {
+    var columnIndex = Number(this.dsColumns.getColumn(row, "ColumnIndex"));
+    var isVisible = String(this.dsColumns.getColumn(row, "Visible")) === "1";
+    var originalSize = grid._responsiveBaseColumnSizes[columnIndex] || 120;
+    grid.setFormatColProperty(columnIndex, "size", isVisible ? originalSize : 0);
+  }
+  grid.set_enableredraw(true);
+  this.close(true);
+};
+this.onCancel = function() { this.close(false); };
+"""
+
+
+def write_column_chooser(root):
+    path = Path(root) / "forms" / "ColumnChooser.xfdl"
+    source = '''<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1"><Form id="ColumnChooser" width="360" height="480" titletext="Choose Grid columns" onload="onLoad" onsize="onResponsiveSize">
+<Layouts><Layout width="360" height="480">
+<Static id="staTitle" left="16" top="14" width="328" height="30" text="Choose visible columns" cssclass="popupTitle"/>
+<Static id="staHint" left="16" top="48" width="328" height="22" text="Check the columns to display." cssclass="muted"/>
+<Grid id="grdColumns" left="12" top="78" width="336" height="342" binddataset="dsColumns" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="56"/><Column size="280"/></Columns><Rows><Row size="34" band="head"/><Row size="38"/></Rows><Band id="head"><Cell col="0" text="Show"/><Cell col="1" text="Column"/></Band><Band id="body"><Cell col="0" displaytype="checkboxcontrol" edittype="checkbox" checkboxtruevalue="1" checkboxfalsevalue="0" text="bind:Visible"/><Cell col="1" text="bind:Title"/></Band></Format></Formats></Grid>
+<Button id="btnCancel" left="170" top="432" width="82" height="34" text="Cancel" cssclass="secondary" onclick="onCancel"/>
+<Button id="btnApply" left="260" top="432" width="88" height="34" text="Apply" cssclass="primary" onclick="onApply"/>
+</Layout></Layouts>
+<Objects><Dataset id="dsColumns"><ColumnInfo><Column id="Title" type="STRING" size="256"/><Column id="ColumnIndex" type="STRING" size="16"/><Column id="Visible" type="STRING" size="1"/></ColumnInfo></Dataset></Objects>
+<Script type="xscript5.1"><![CDATA[''' + COLUMN_CHOOSER_SCRIPT.strip() + '''
+]]></Script></Form></FDL>'''
+    path.write_text(source, encoding="utf-8")
+
+
 def configure_controls(path):
     source = path.read_text(encoding="utf-8")
     if path.name == "InventoryList.xfdl":
@@ -836,6 +1422,7 @@ def make_common(path):
 def finalize(root):
     root = Path(root)
     forms = root / "forms"
+    write_column_chooser(root)
     datasets = {
         "Login.xfdl": [
             ("dsLogin", ["Email", "Password", "RememberMe"], "onLoginDatasetChanged"),

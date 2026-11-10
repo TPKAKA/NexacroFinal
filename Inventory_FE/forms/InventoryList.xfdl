@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FDL version="2.1"><Form id="InventoryList" width="1440" height="960" titletext="InventoryList" onload="onLoad">
+<FDL version="2.1"><Form id="InventoryList" width="1440" height="960" titletext="InventoryList" onload="onLoad" onsize="onResponsiveSize" scrolltype="vertical" scrollbartype="none none">
 <Layouts><Layout width="1440" height="960">
 <Static id="staSidebarBg" left="0" top="0" width="280" height="960" text="" cssclass="sidebar"/>
 <Static id="staTopbarBg" left="280" top="0" width="1160" height="100" text="" cssclass="topbar"/>
@@ -35,7 +35,7 @@
 <Static id="staProductsCard" left="312" top="330" width="1096" height="581" text="" cssclass="card"/>
 <Static id="staProductsTitle" left="330" top="349" width="300" height="37" text="Products" cssclass="sectionTitle"/>
 <Button id="btnAdd" left="1020" top="345" width="130" height="42" text="Add Product" cssclass="primary" onclick="onAdd"/>
-<Button id="btnFilter" left="1160" top="345" width="105" height="42" text="☷  Filters" cssclass="secondary" onclick="onFilter"/>
+<Button id="btnFilter" left="1160" top="345" width="105" height="42" text="Columns" cssclass="secondary" onclick="onFilter"/>
 <Button id="btnDownload" left="1274" top="345" width="118" height="42" text="Download all" cssclass="secondary" onclick="onDownload"/>
 <Grid id="grdProducts" binddataset="dsProducts" left="330" top="401" width="1062" height="452" cssclass="dataGrid" autofittype="col" selecttype="row" oncellclick="onOpenProduct"><Formats><Format id="default"><Columns><Column size="324"/><Column size="179"/><Column size="134"/><Column size="145"/><Column size="179"/><Column size="159"/></Columns><Rows><Row size="44" band="head"/><Row size="48"/></Rows><Band id="head"><Cell col="0" text="Product name"/><Cell col="1" text="Buying price"/><Cell col="2" text="Quantity"/><Cell col="3" text="Threshold"/><Cell col="4" text="Expiry date"/><Cell col="5" text="Status"/></Band><Band id="body"><Cell col="0" text="bind:ProductName"/><Cell col="1" text="bind:BuyingPrice"/><Cell col="2" text="bind:Quantity"/><Cell col="3" text="bind:Threshold"/><Cell col="4" text="bind:ExpiryDate"/><Cell col="5" text="bind:Status" color="expr:Status=='Out of stock'?'#C44C4C':Status=='Low stock'?'#D49B27':'#2D765E'"/></Band></Format></Formats></Grid>
 <Button id="btnPrev" left="330" top="865" width="92" height="35" text="Previous" cssclass="secondary" onclick="onPrev"/>
@@ -49,8 +49,12 @@ this.pageSize = 10;
 this.searchText = "";
 this.statusFilter = "";
 this.onLoad = function() {
+  this.onResponsiveSize();
   if (!nexacro.getApplication().sessionToken) return this.gfnNavigate("Login");
   this.refresh();
+};
+this.onResponsiveSize = function() {
+  this.gfnResponsiveInventoryList(this.gfnResponsiveShell("InventoryList", true));
 };
 this.onNavInventoryList = function() {};
 this.onNavSupplierList = function() { this.gfnNavigate("SupplierList"); };
@@ -77,7 +81,8 @@ this.refreshPageLabel = function() {
   var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
   var start = count ? this.page * this.pageSize + 1 : 0;
   var end = this.page * this.pageSize + count;
-  this.staPage.set_text("Showing " + start + "–" + end + " of " + total + " products");
+  this.staPage.set_text(this.getOffsetWidth() < 760 ? start + "–" + end + " / " + total :
+    "Showing " + start + "–" + end + " of " + total + " products");
 };
 this.onProductsChanged = function(obj, e) {
   if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
@@ -110,12 +115,9 @@ this.onSearch = function() {
   this.refresh();
 };
 this.onFilter = function() {
-  var filters = ["", "In stock", "Low stock", "Out of stock"];
-  this.statusFilter = filters[(filters.indexOf(this.statusFilter) + 1) % filters.length];
-  this.btnFilter.set_text(this.statusFilter || "Filters");
-  this.page = 0;
-  this.refresh();
+  this.gfnPopup("ColumnChooser", 360, 480, "onColumnChooserClosed", { pvGrid: this.grdProducts });
 };
+this.onColumnChooserClosed = function(serviceId, value) {};
 this.onPrev = function() { if (this.page > 0) { this.page--; this.refresh(); } };
 this.onNext = function() {
   var total = this.dsSummary.rowcount ? Number(this.dsSummary.getColumn(0, "FilteredProducts")) : 0;
