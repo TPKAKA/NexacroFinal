@@ -90,8 +90,9 @@ this.onComingSoon = function() { this.gfnMessage("This section is not part of th
 this.onBack = function() { this.gfnNavigate("InventoryList"); };
 this.onEdit = function() {
   if (!this.dsProductDetail.rowcount) return;
-  nexacro.getApplication().editProductId = this.dsProductDetail.getColumn(0, "ProductID");
-  this.gfnPopup("ProductForm", 500, 800, "onProductSaved");
+  var productId = this.dsProductDetail.getColumn(0, "ProductID");
+  nexacro.getApplication().editProductId = productId;
+  this.gfnPopup("ProductForm", 500, 800, "onProductSaved", { productId: productId });
 };
 this.onProductSaved = function(serviceId, value) { if (value) this.onLoad(); };
 this.onDownload = function() {

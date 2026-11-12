@@ -31,24 +31,29 @@ or Browse image" cssclass="uploadHint"/>
 this.isEditing = false;
 this.imageUploaded = false;
 this.onLoad = function() {
-  this.onResponsiveSize();
   var app = nexacro.getApplication();
-  this.isEditing = !this.gfnEmpty(app.editProductId);
+  var ownerFrame = this.getOwnerFrame();
+  var popupArgs = ownerFrame && ownerFrame.arguments || {};
+  var productId = popupArgs.productId || app.editProductId || "";
+  this.isEditing = !this.gfnEmpty(productId);
+  this.staFormTitle.set_text(this.isEditing ? "Edit Product" : "New Product");
+  this.btnSave.set_text(this.isEditing ? "Save changes" : "Add Product");
   this.gfnBindRecord(this.dsProduct, {
     ProductID: "", ProductName: "", Category: "Electronics", BuyingPrice: "0",
     Quantity: "0", Unit: "pcs", ExpiryDate: "2027-12-31", Threshold: "0",
     Supplier: "", SupplierID: "", ImageUrl: "", Status: ""
   });
-  this.gfnBindRecord(this.dsRequest, { ProductID: app.editProductId || "" });
+  this.gfnBindRecord(this.dsRequest, { ProductID: productId });
   this.gfnLoadCodes("onProductCodesLoaded");
   if (this.isEditing) {
-    this.staFormTitle.set_text("Edit Product");
-    this.btnSave.set_text("Save changes");
     this.gfnTransaction("product-edit-load", "products/detail", "dsRequest=dsRequest",
       "dsProduct=dsProduct dsProductDetail=dsProductDetail", "", "onEditProductLoaded");
   }
+  this.onResponsiveSize();
 };
-this.onResponsiveSize = function() { this.gfnResponsiveModal(false); };
+this.onResponsiveSize = function() {
+  if (typeof this.gfnResponsiveModal === "function") this.gfnResponsiveModal(false);
+};
 this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
   this.gfnCacheCodes();

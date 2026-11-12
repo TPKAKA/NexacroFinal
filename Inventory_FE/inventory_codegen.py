@@ -17,6 +17,7 @@ SUPPLIER_COLUMNS = [
     "SupplierID", "SupplierName", "Product", "Category", "BuyingPrice", "Contact",
     "Email", "Type", "OnTheWay", "ImageUrl",
 ]
+FRONTEND_VERSION = "1.0.5"
 EVENT_COLUMNS = ["EventID", "Type", "QuantityChange", "Description", "CreatedAt"]
 
 
@@ -398,6 +399,7 @@ this.gfnResponsiveGridColumns = function(grid, visibleIndexes) {
       grid._responsiveBaseColumnSizes[i] = size > 0 ? size : 120;
     }
   }
+  if (grid._chosenVisibleColumns) visibleIndexes = grid._chosenVisibleColumns;
   var visible = {};
   for (var j = 0; j < visibleIndexes.length; j++) visible[visibleIndexes[j]] = true;
   grid.set_enableredraw(false);
@@ -805,11 +807,13 @@ this.onLogoutResult = function(serviceId, errorCode, errorMessage) {
 
 LOGIN_SCRIPT = r"""
 this.onLoad = function() {
-  this.onResponsiveSize();
   this.gfnBindRecord(this.dsLogin, { Email: "", Password: "", RememberMe: "0" });
   this.gfnBindRecord(this.dsForgot, { Email: "" });
+  this.onResponsiveSize();
 };
-this.onResponsiveSize = function() { this.gfnResponsiveAuth(false); };
+this.onResponsiveSize = function() {
+  if (typeof this.gfnResponsiveAuth === "function") this.gfnResponsiveAuth(false);
+};
 this.onLogin = function() {
   var row = this.dsLogin.rowposition < 0 ? 0 : this.dsLogin.rowposition;
   var email = this.dsLogin.getColumn(row, "Email");
@@ -844,10 +848,12 @@ this.onLoginDatasetChanged = function(obj, e) {
 
 SIGNUP_SCRIPT = r"""
 this.onLoad = function() {
-  this.onResponsiveSize();
   this.gfnBindRecord(this.dsSignup, { Name: "", Email: "", Password: "", Confirm: "" });
+  this.onResponsiveSize();
 };
-this.onResponsiveSize = function() { this.gfnResponsiveAuth(true); };
+this.onResponsiveSize = function() {
+  if (typeof this.gfnResponsiveAuth === "function") this.gfnResponsiveAuth(true);
+};
 this.onCreate = function() {
   var row = this.dsSignup.rowposition < 0 ? 0 : this.dsSignup.rowposition;
   var name = this.dsSignup.getColumn(row, "Name");
@@ -1056,24 +1062,29 @@ PRODUCT_FORM_SCRIPT = r"""
 this.isEditing = false;
 this.imageUploaded = false;
 this.onLoad = function() {
-  this.onResponsiveSize();
   var app = nexacro.getApplication();
-  this.isEditing = !this.gfnEmpty(app.editProductId);
+  var ownerFrame = this.getOwnerFrame();
+  var popupArgs = ownerFrame && ownerFrame.arguments || {};
+  var productId = popupArgs.productId || app.editProductId || "";
+  this.isEditing = !this.gfnEmpty(productId);
+  this.staFormTitle.set_text(this.isEditing ? "Edit Product" : "New Product");
+  this.btnSave.set_text(this.isEditing ? "Save changes" : "Add Product");
   this.gfnBindRecord(this.dsProduct, {
     ProductID: "", ProductName: "", Category: "Electronics", BuyingPrice: "0",
     Quantity: "0", Unit: "pcs", ExpiryDate: "2027-12-31", Threshold: "0",
     Supplier: "", SupplierID: "", ImageUrl: "", Status: ""
   });
-  this.gfnBindRecord(this.dsRequest, { ProductID: app.editProductId || "" });
+  this.gfnBindRecord(this.dsRequest, { ProductID: productId });
   this.gfnLoadCodes("onProductCodesLoaded");
   if (this.isEditing) {
-    this.staFormTitle.set_text("Edit Product");
-    this.btnSave.set_text("Save changes");
     this.gfnTransaction("product-edit-load", "products/detail", "dsRequest=dsRequest",
       "dsProduct=dsProduct dsProductDetail=dsProductDetail", "", "onEditProductLoaded");
   }
+  this.onResponsiveSize();
 };
-this.onResponsiveSize = function() { this.gfnResponsiveModal(false); };
+this.onResponsiveSize = function() {
+  if (typeof this.gfnResponsiveModal === "function") this.gfnResponsiveModal(false);
+};
 this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0) return this.gfnHandleApiError(errorCode, errorMessage);
   this.gfnCacheCodes();
@@ -1287,8 +1298,9 @@ this.onComingSoon = function() { this.gfnMessage("This section is not part of th
 this.onBack = function() { this.gfnNavigate("InventoryList"); };
 this.onEdit = function() {
   if (!this.dsProductDetail.rowcount) return;
-  nexacro.getApplication().editProductId = this.dsProductDetail.getColumn(0, "ProductID");
-  this.gfnPopup("ProductForm", 500, 800, "onProductSaved");
+  var productId = this.dsProductDetail.getColumn(0, "ProductID");
+  nexacro.getApplication().editProductId = productId;
+  this.gfnPopup("ProductForm", 500, 800, "onProductSaved", { productId: productId });
 };
 this.onProductSaved = function(serviceId, value) { if (value) this.onLoad(); };
 this.onDownload = function() {
@@ -1333,9 +1345,19 @@ this.onLoad = function() {
     var row = this.dsColumns.addRow();
     this.dsColumns.setColumn(row, "Title", title);
     this.dsColumns.setColumn(row, "ColumnIndex", String(column));
-    this.dsColumns.setColumn(row, "Visible", Number(grid.getFormatColProperty(column, "size")) > 0 ? "1" : "0");
+    var selected = grid._chosenVisibleColumns
+      ? grid._chosenVisibleColumns.indexOf(column) >= 0
+      : Number(grid.getFormatColProperty(column, "size")) > 0;
+    this.dsColumns.setColumn(row, "Visible", selected ? "1" : "0");
+    this.dsColumns.setColumn(row, "ToggleLabel", selected ? "☑" : "□");
   }
   this.onResponsiveSize();
+};
+this.onColumnClick = function(obj, e) {
+  if (!e || e.row < 0 || e.row >= this.dsColumns.rowcount) return;
+  var selected = String(this.dsColumns.getColumn(e.row, "Visible")) !== "1";
+  this.dsColumns.setColumn(e.row, "Visible", selected ? "1" : "0");
+  this.dsColumns.setColumn(e.row, "ToggleLabel", selected ? "☑" : "□");
 };
 this.onResponsiveSize = function() {
   var width = Number(this.getOffsetWidth()) || 360;
@@ -1360,11 +1382,13 @@ this.onResponsiveSize = function() {
 this.onApply = function() {
   var grid = this.targetGrid;
   if (!grid) return this.close(false);
-  var visibleCount = 0;
+  var selectedColumns = [];
   for (var i = 0; i < this.dsColumns.rowcount; i++) {
-    if (String(this.dsColumns.getColumn(i, "Visible")) === "1") visibleCount++;
+    if (String(this.dsColumns.getColumn(i, "Visible")) === "1")
+      selectedColumns.push(Number(this.dsColumns.getColumn(i, "ColumnIndex")));
   }
-  if (!visibleCount) return this.alert("Keep at least one Grid column visible.");
+  if (!selectedColumns.length) return this.alert("Keep at least one Grid column visible.");
+  grid._chosenVisibleColumns = selectedColumns;
   grid.set_enableredraw(false);
   for (var row = 0; row < this.dsColumns.rowcount; row++) {
     var columnIndex = Number(this.dsColumns.getColumn(row, "ColumnIndex"));
@@ -1386,11 +1410,11 @@ def write_column_chooser(root):
 <Layouts><Layout width="360" height="480">
 <Static id="staTitle" left="16" top="14" width="328" height="30" text="Choose visible columns" cssclass="popupTitle"/>
 <Static id="staHint" left="16" top="48" width="328" height="22" text="Check the columns to display." cssclass="muted"/>
-<Grid id="grdColumns" left="12" top="78" width="336" height="342" binddataset="dsColumns" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="56"/><Column size="280"/></Columns><Rows><Row size="34" band="head"/><Row size="38"/></Rows><Band id="head"><Cell col="0" text="Show"/><Cell col="1" text="Column"/></Band><Band id="body"><Cell col="0" displaytype="checkboxcontrol" edittype="checkbox" checkboxtruevalue="1" checkboxfalsevalue="0" text="bind:Visible"/><Cell col="1" text="bind:Title"/></Band></Format></Formats></Grid>
+<Grid id="grdColumns" left="12" top="78" width="336" height="342" binddataset="dsColumns" cssclass="dataGrid" autofittype="col" selecttype="row" oncellclick="onColumnClick"><Formats><Format id="default"><Columns><Column size="56"/><Column size="280"/></Columns><Rows><Row size="34" band="head"/><Row size="38"/></Rows><Band id="head"><Cell col="0" text="Show"/><Cell col="1" text="Column"/></Band><Band id="body"><Cell col="0" text="bind:ToggleLabel" textAlign="center"/><Cell col="1" text="bind:Title"/></Band></Format></Formats></Grid>
 <Button id="btnCancel" left="170" top="432" width="82" height="34" text="Cancel" cssclass="secondary" onclick="onCancel"/>
 <Button id="btnApply" left="260" top="432" width="88" height="34" text="Apply" cssclass="primary" onclick="onApply"/>
 </Layout></Layouts>
-<Objects><Dataset id="dsColumns"><ColumnInfo><Column id="Title" type="STRING" size="256"/><Column id="ColumnIndex" type="STRING" size="16"/><Column id="Visible" type="STRING" size="1"/></ColumnInfo></Dataset></Objects>
+<Objects><Dataset id="dsColumns"><ColumnInfo><Column id="Title" type="STRING" size="256"/><Column id="ColumnIndex" type="STRING" size="16"/><Column id="Visible" type="STRING" size="1"/><Column id="ToggleLabel" type="STRING" size="4"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[''' + COLUMN_CHOOSER_SCRIPT.strip() + '''
 ]]></Script></Form></FDL>'''
     path.write_text(source, encoding="utf-8")
@@ -1537,7 +1561,7 @@ def finalize(root):
     app_tag = re.search(r'<Application\b[^>]*>', adl)
     if app_tag:
         normalized = re.sub(r'\s+(?:checkversion|version)="[^"]*"', '', app_tag.group(0))
-        normalized = normalized[:-1] + ' checkversion="true" version="1.0.0">'
+        normalized = normalized[:-1] + f' checkversion="true" version="{FRONTEND_VERSION}">'
         adl = adl[:app_tag.start()] + normalized + adl[app_tag.end():]
     application.write_text(adl, encoding="utf-8")
 
@@ -1560,7 +1584,12 @@ def finalize(root):
     for prefix in ("theme", "xcssrc", "forms", "lib"):
         config = re.sub(
             rf'(<Service\b(?=[^>]*\bprefixid="{prefix}")[^>]*\bversion=")[^"]*(")',
-            r'\g<1>1.0.0\2', config,
+            rf'\g<1>{FRONTEND_VERSION}\2', config,
+        )
+    for prefix in ("forms", "lib"):
+        config = re.sub(
+            rf'(<Service\b(?=[^>]*\bprefixid="{prefix}")[^>]*\bcachelevel=")[^"]*(")',
+            r'\g<1>none\2', config,
         )
     config = re.sub(
         r'(<Service\b(?=[^>]*\bprefixid="api")[^>]*\bversion=")[^"]*(")',

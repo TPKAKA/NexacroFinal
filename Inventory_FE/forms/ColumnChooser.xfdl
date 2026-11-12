@@ -3,11 +3,11 @@
 <Layouts><Layout width="360" height="480">
 <Static id="staTitle" left="16" top="14" width="328" height="30" text="Choose visible columns" cssclass="popupTitle"/>
 <Static id="staHint" left="16" top="48" width="328" height="22" text="Check the columns to display." cssclass="muted"/>
-<Grid id="grdColumns" left="12" top="78" width="336" height="342" binddataset="dsColumns" cssclass="dataGrid" autofittype="col" selecttype="row"><Formats><Format id="default"><Columns><Column size="56"/><Column size="280"/></Columns><Rows><Row size="34" band="head"/><Row size="38"/></Rows><Band id="head"><Cell col="0" text="Show"/><Cell col="1" text="Column"/></Band><Band id="body"><Cell col="0" displaytype="checkboxcontrol" edittype="checkbox" checkboxtruevalue="1" checkboxfalsevalue="0" text="bind:Visible"/><Cell col="1" text="bind:Title"/></Band></Format></Formats></Grid>
+<Grid id="grdColumns" left="12" top="78" width="336" height="342" binddataset="dsColumns" cssclass="dataGrid" autofittype="col" selecttype="row" oncellclick="onColumnClick"><Formats><Format id="default"><Columns><Column size="56"/><Column size="280"/></Columns><Rows><Row size="34" band="head"/><Row size="38"/></Rows><Band id="head"><Cell col="0" text="Show"/><Cell col="1" text="Column"/></Band><Band id="body"><Cell col="0" text="bind:ToggleLabel" textAlign="center"/><Cell col="1" text="bind:Title"/></Band></Format></Formats></Grid>
 <Button id="btnCancel" left="170" top="432" width="82" height="34" text="Cancel" cssclass="secondary" onclick="onCancel"/>
 <Button id="btnApply" left="260" top="432" width="88" height="34" text="Apply" cssclass="primary" onclick="onApply"/>
 </Layout></Layouts>
-<Objects><Dataset id="dsColumns"><ColumnInfo><Column id="Title" type="STRING" size="256"/><Column id="ColumnIndex" type="STRING" size="16"/><Column id="Visible" type="STRING" size="1"/></ColumnInfo></Dataset></Objects>
+<Objects><Dataset id="dsColumns"><ColumnInfo><Column id="Title" type="STRING" size="256"/><Column id="ColumnIndex" type="STRING" size="16"/><Column id="Visible" type="STRING" size="1"/><Column id="ToggleLabel" type="STRING" size="4"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[this.targetGrid = null;
 this.onLoad = function() {
   this.targetGrid = this.getOwnerFrame().pvGrid;
@@ -37,9 +37,19 @@ this.onLoad = function() {
     var row = this.dsColumns.addRow();
     this.dsColumns.setColumn(row, "Title", title);
     this.dsColumns.setColumn(row, "ColumnIndex", String(column));
-    this.dsColumns.setColumn(row, "Visible", Number(grid.getFormatColProperty(column, "size")) > 0 ? "1" : "0");
+    var selected = grid._chosenVisibleColumns
+      ? grid._chosenVisibleColumns.indexOf(column) >= 0
+      : Number(grid.getFormatColProperty(column, "size")) > 0;
+    this.dsColumns.setColumn(row, "Visible", selected ? "1" : "0");
+    this.dsColumns.setColumn(row, "ToggleLabel", selected ? "☑" : "□");
   }
   this.onResponsiveSize();
+};
+this.onColumnClick = function(obj, e) {
+  if (!e || e.row < 0 || e.row >= this.dsColumns.rowcount) return;
+  var selected = String(this.dsColumns.getColumn(e.row, "Visible")) !== "1";
+  this.dsColumns.setColumn(e.row, "Visible", selected ? "1" : "0");
+  this.dsColumns.setColumn(e.row, "ToggleLabel", selected ? "☑" : "□");
 };
 this.onResponsiveSize = function() {
   var width = Number(this.getOffsetWidth()) || 360;
@@ -64,11 +74,13 @@ this.onResponsiveSize = function() {
 this.onApply = function() {
   var grid = this.targetGrid;
   if (!grid) return this.close(false);
-  var visibleCount = 0;
+  var selectedColumns = [];
   for (var i = 0; i < this.dsColumns.rowcount; i++) {
-    if (String(this.dsColumns.getColumn(i, "Visible")) === "1") visibleCount++;
+    if (String(this.dsColumns.getColumn(i, "Visible")) === "1")
+      selectedColumns.push(Number(this.dsColumns.getColumn(i, "ColumnIndex")));
   }
-  if (!visibleCount) return this.alert("Keep at least one Grid column visible.");
+  if (!selectedColumns.length) return this.alert("Keep at least one Grid column visible.");
+  grid._chosenVisibleColumns = selectedColumns;
   grid.set_enableredraw(false);
   for (var row = 0; row < this.dsColumns.rowcount; row++) {
     var columnIndex = Number(this.dsColumns.getColumn(row, "ColumnIndex"));

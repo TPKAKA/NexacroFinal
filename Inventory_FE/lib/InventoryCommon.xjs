@@ -278,6 +278,7 @@ this.gfnResponsiveGridColumns = function(grid, visibleIndexes) {
       grid._responsiveBaseColumnSizes[i] = size > 0 ? size : 120;
     }
   }
+  if (grid._chosenVisibleColumns) visibleIndexes = grid._chosenVisibleColumns;
   var visible = {};
   for (var j = 0; j < visibleIndexes.length; j++) visible[visibleIndexes[j]] = true;
   grid.set_enableredraw(false);

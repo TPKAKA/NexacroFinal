@@ -3,6 +3,7 @@ package com.psi.training.nexacro.xapi.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,6 +38,21 @@ class InventoryApiIntegrationTest {
 
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper mapper;
+
+    @Test
+    void nexacroSignupPreflightAllowsRuntimeHeaders() throws Exception {
+        MvcResult result = mvc.perform(options("/api/auth/signup")
+                .header("Origin", "http://127.0.0.1:4098")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers",
+                    "cache-control,content-type,expires,if-modified-since,pragma,x-requested-with"))
+            .andExpect(status().isOk())
+            .andReturn();
+        assertThat(result.getResponse().getHeader("Access-Control-Allow-Origin"))
+            .isEqualTo("http://127.0.0.1:4098");
+        assertThat(result.getResponse().getHeader("Access-Control-Allow-Headers").toLowerCase())
+            .contains("x-requested-with", "cache-control", "if-modified-since");
+    }
 
     @DynamicPropertySource
     static void uploadDirectory(DynamicPropertyRegistry registry) {

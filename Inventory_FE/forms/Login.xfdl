@@ -20,11 +20,13 @@
 <Objects><Dataset id="dsLogin" onrowsetchanged="onLoginDatasetChanged"><ColumnInfo><Column id="Email" type="STRING" size="1024"/><Column id="Password" type="STRING" size="1024"/><Column id="RememberMe" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSession"><ColumnInfo><Column id="UserID" type="STRING" size="1024"/><Column id="Name" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Token" type="STRING" size="1024"/><Column id="ExpiresAt" type="STRING" size="1024"/><Column id="RememberMe" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsForgot"><ColumnInfo><Column id="Email" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsResult"><ColumnInfo><Column id="Message" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.onLoad = function() {
-  this.onResponsiveSize();
   this.gfnBindRecord(this.dsLogin, { Email: "", Password: "", RememberMe: "0" });
   this.gfnBindRecord(this.dsForgot, { Email: "" });
+  this.onResponsiveSize();
 };
-this.onResponsiveSize = function() { this.gfnResponsiveAuth(false); };
+this.onResponsiveSize = function() {
+  if (typeof this.gfnResponsiveAuth === "function") this.gfnResponsiveAuth(false);
+};
 this.onLogin = function() {
   var row = this.dsLogin.rowposition < 0 ? 0 : this.dsLogin.rowposition;
   var email = this.dsLogin.getColumn(row, "Email");
