@@ -45,7 +45,7 @@
 <Objects><Dataset id="dsProducts" onrowsetchanged="onProductsChanged"><ColumnInfo><Column id="ProductID" type="STRING" size="1024"/><Column id="ProductName" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Quantity" type="STRING" size="1024"/><Column id="Unit" type="STRING" size="1024"/><Column id="ExpiryDate" type="STRING" size="1024"/><Column id="Threshold" type="STRING" size="1024"/><Column id="Supplier" type="STRING" size="1024"/><Column id="SupplierID" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSearch"><ColumnInfo><Column id="Search" type="STRING" size="1024"/><Column id="Status" type="STRING" size="1024"/><Column id="Page" type="STRING" size="1024"/><Column id="PageSize" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsLogout"><ColumnInfo><Column id="SessionToken" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSummary" onrowsetchanged="onSummaryChanged" onload="onSummaryLoaded"><ColumnInfo><Column id="Categories" type="STRING" size="1024"/><Column id="TotalProducts" type="STRING" size="1024"/><Column id="FilteredProducts" type="STRING" size="1024"/><Column id="TopSelling" type="STRING" size="1024"/><Column id="LowStocks" type="STRING" size="1024"/><Column id="OutOfStock" type="STRING" size="1024"/><Column id="TopSellingNote" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.page = 0;
-this.pageSize = 10;
+this.pageSize = 5;
 this.searchText = "";
 this.statusFilter = "";
 this.onLoad = function() {
@@ -83,6 +83,8 @@ this.refreshPageLabel = function() {
   var end = this.page * this.pageSize + count;
   this.staPage.set_text(this.getOffsetWidth() < 760 ? start + "–" + end + " / " + total :
     "Showing " + start + "–" + end + " of " + total + " products");
+  this.btnPrev.set_enable(this.page > 0);
+  this.btnNext.set_enable((this.page + 1) * this.pageSize < total);
 };
 this.onProductsChanged = function(obj, e) {
   if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||

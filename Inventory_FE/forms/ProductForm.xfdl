@@ -4,6 +4,7 @@
 <Static id="staFormTitle" left="28" top="23" width="440" height="40" text="New Product" cssclass="popupTitle"/>
 <Static id="staImageBox" left="140" top="70" width="90" height="84" text="" cssclass="uploadBox"/>
 <Static id="staImageGlyph" left="162" top="83" width="48" height="55" text="+" cssclass="uploadGlyph"/>
+<ImageViewer id="imgPreview" left="140" top="70" width="90" height="84" cssclass="uploadPreview" stretch="fixaspectratio" visible="false"/>
 <Static id="staImage" left="240" top="82" width="220" height="50" text="Drag image here
 or Browse image" cssclass="uploadHint"/>
 <FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker" onitemchanged="onImageChanged" onsuccess="onImageUploadSuccess" onerror="onImageUploadError"/>
@@ -30,6 +31,7 @@ or Browse image" cssclass="uploadHint"/>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.isEditing = false;
 this.imageUploaded = false;
+this.imageUploading = false;
 this.onLoad = function() {
   var app = nexacro.getApplication();
   var ownerFrame = this.getOwnerFrame();
@@ -72,8 +74,12 @@ this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
 };
 this.onEditProductLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0 || !this.dsProduct.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnSetImagePreview(this.dsProduct.getColumn(0, "ImageUrl"));
 };
-this.onImageChanged = function() { this.imageUploaded = false; };
+this.onImageChanged = function(obj, event) {
+  this.imageUploaded = false;
+  this.gfnPreviewSelectedImage(obj, event);
+};
 this.onSave = function() {
   var row = this.dsProduct.rowposition < 0 ? 0 : this.dsProduct.rowposition;
   var fields = ["ProductName", "ProductID", "Category", "BuyingPrice", "Quantity", "Unit", "ExpiryDate", "Threshold"];
@@ -86,10 +92,10 @@ this.onSave = function() {
     return this.gfnMessage("Price, quantity and threshold must be non-negative numbers.");
   }
   if (!this.gfnDate(this.dsProduct.getColumn(row, "ExpiryDate"))) return this.gfnMessage("Expiry date must be YYYY-MM-DD.");
+  if (this.imageUploading) return;
   if (this.uplImage.getItemCount(true) > 0 && !this.imageUploaded) {
-    var token = nexacro.getApplication().sessionToken;
-    if (!token) return this.gfnHandleApiError(-1, "Your session has expired. Sign in again.");
-    this.uplImage.upload("api::uploads/image?sessionToken=" + token);
+    this.imageUploading = true;
+    this.gfnUploadImage(this.uplImage);
     return;
   }
   this.submitProduct();
@@ -99,15 +105,20 @@ this.onImageUploadSuccess = function(obj, e) {
   var result = null;
   if (uploaded && uploaded.length) result = uploaded[0];
   else if (uploaded && uploaded.getCount && uploaded.getCount() > 0) result = uploaded.getItem(0);
-  if (!result || !result.rowcount) return this.gfnMessage("The image upload returned no image URL.");
+  if (!result || !result.rowcount) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
   var url = result.getColumn(0, "ImageUrl");
-  if (this.gfnEmpty(url)) return this.gfnMessage("The image upload returned no image URL.");
+  if (this.gfnEmpty(url)) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
+  this.onImageUploaded(url);
+};
+this.onImageUploaded = function(url) {
+  this.imageUploading = false;
   var row = this.dsProduct.rowposition < 0 ? 0 : this.dsProduct.rowposition;
   this.dsProduct.setColumn(row, "ImageUrl", url);
   this.imageUploaded = true;
   this.submitProduct();
 };
 this.onImageUploadError = function(obj, e) {
+  this.imageUploading = false;
   this.gfnMessage(e && e.errormsg ? e.errormsg : "The image could not be uploaded.");
 };
 this.submitProduct = function() {

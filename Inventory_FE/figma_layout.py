@@ -192,6 +192,7 @@ def popup(root, supplier=False):
     parts=[c('Static','staFormTitle',28,23,440,40,'New Supplier' if supplier else 'New Product','popupTitle'),
            c('Static','staImageBox',140,70,90,84,'','uploadBox'),
            c('Static','staImageGlyph',162,83,48,55,'+' ,'uploadGlyph'),
+           c('ImageViewer','imgPreview',140,70,90,84,None,'uploadPreview',None,stretch='fixaspectratio',visible='false'),
            c('Static','staImage',240,82,220,50,'Drag image here\nor Browse image','uploadHint'),
            c('FileUpload','uplImage',240,126,218,30,None,'uploadPicker')]
     fields = ([('SupplierName','Supplier Name'),('Product','Product'),('Category','Category'),('BuyingPrice','Buying Price'),('Contact','Contact Number'),('Type','Type')]
@@ -294,6 +295,7 @@ def apply(root):
 .Edit.modalField, .Combo.modalField { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:5px; -nexa-padding:0px 10px; color:#303943; font:13px "Segoe UI"; }
 .Static.uploadBox { background:#FFFFFF; -nexa-border:1px dashed #DDE2E8; border-radius:6px; }
 .Static.uploadGlyph { color:#A2ADB9; -nexa-text-align:center; font:36px "Segoe UI"; }
+.ImageViewer.uploadPreview { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:6px; }
 .Static.uploadHint { color:#9CA4AF; font:12px "Segoe UI"; }
 .FileUpload.uploadPicker { color:#1E6FD9; font:12px "Segoe UI"; }
 .Static.detailBody { color:#626C78; font:14px "Segoe UI"; }

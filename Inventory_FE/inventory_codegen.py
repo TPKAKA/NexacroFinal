@@ -17,7 +17,7 @@ SUPPLIER_COLUMNS = [
     "SupplierID", "SupplierName", "Product", "Category", "BuyingPrice", "Contact",
     "Email", "Type", "OnTheWay", "ImageUrl",
 ]
-FRONTEND_VERSION = "1.0.5"
+FRONTEND_VERSION = "1.0.10"
 EVENT_COLUMNS = ["EventID", "Type", "QuantityChange", "Description", "CreatedAt"]
 
 
@@ -310,8 +310,8 @@ this.gfnResponsiveShell = function(active, hasSearch) {
   this.gfnResponsiveVisible("staSidebarBg", !mobile);
   this.gfnResponsiveBounds("staTopbarBg", sidebarWidth, 0, Math.max(1, width - sidebarWidth), topbarHeight);
   this.gfnResponsiveVisible("staTopbarBg", true);
-  this.gfnResponsiveVisible("staLogoMark", !mobile && !compact);
-  this.gfnResponsiveVisible("staBrand", !mobile && !compact);
+  this.gfnResponsiveVisible("staLogoMark", !mobile);
+  this.gfnResponsiveVisible("staBrand", !mobile);
   this.gfnResponsiveVisible("staBell", !mobile);
   this.gfnResponsiveVisible("staAvatar", !mobile);
   for (var i = 0; i < navIds.length; i++) {
@@ -351,8 +351,8 @@ this.gfnResponsiveShell = function(active, hasSearch) {
       this.gfnResponsiveVisible("staSearchPlaceholder", false);
     }
   } else {
-    this.gfnResponsiveBounds("staLogoMark", sidebarWidth + 36, 28, 32, 42);
-    this.gfnResponsiveBounds("staBrand", sidebarWidth + 76, 31, 170, 40);
+    this.gfnResponsiveBounds("staLogoMark", compact ? 16 : 36, 28, 32, 42);
+    this.gfnResponsiveBounds("staBrand", compact ? 56 : 76, 31, compact ? 145 : 170, 40);
     this.gfnResponsiveBounds("staBell", width - 110, 29, 35, 42);
     this.gfnResponsiveBounds("staAvatar", width - 60, 30, 38, 38);
     this.btnInventoryList.set_text("Inventory");
@@ -625,8 +625,9 @@ this.gfnResponsiveDetail = function(layout) {
   var left = layout.contentLeft, width = layout.contentWidth, top = layout.bodyTop;
   var height = layout.height;
   var singleColumn = layout.mobile || width < 920;
-  var cardHeight = singleColumn ? Math.max(900, height - top - 24) : Math.max(640, height - top - 49);
+  var cardHeight = singleColumn ? Math.max(960, height - top - 24) : Math.max(790, height - top - 49);
   this.gfnResponsiveBounds("staDetailCard", left, top, width, cardHeight);
+  this.gfnResponsiveVisible("staTab", false);
   if (singleColumn) {
     var innerLeft = left + 16, innerWidth = Math.max(220, width - 32);
     this.gfnResponsiveBounds("staName", innerLeft, top + 14, innerWidth, 42);
@@ -694,6 +695,7 @@ this.gfnResponsiveModal = function(supplier) {
     this.gfnResponsiveBounds("staFormTitle", 16, 14, width - 32, 36);
     this.gfnResponsiveBounds("staImageBox", 16, 58, 54, 48);
     this.gfnResponsiveBounds("staImageGlyph", 16, 58, 54, 48);
+    this.gfnResponsiveBounds("imgPreview", 16, 58, 54, 48);
     this.gfnResponsiveBounds("staImage", 78, 58, Math.max(120, width - 94), 24);
     this.gfnResponsiveBounds("uplImage", 78, 86, Math.max(120, width - 94), 30);
     var fields = supplier ? ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"] :
@@ -713,6 +715,7 @@ this.gfnResponsiveModal = function(supplier) {
   this.gfnResponsiveBounds("staFormTitle", 28, 23, width - 56, 40);
   this.gfnResponsiveBounds("staImageBox", Math.round(width * 0.28), 70, 90, 84);
   this.gfnResponsiveBounds("staImageGlyph", Math.round(width * 0.28) + 22, 83, 48, 55);
+  this.gfnResponsiveBounds("imgPreview", Math.round(width * 0.28), 70, 90, 84);
   this.gfnResponsiveBounds("staImage", Math.round(width * 0.48), 82, width * 0.44, 50);
   this.gfnResponsiveBounds("uplImage", Math.round(width * 0.48), 126, width * 0.44, 30);
   var modalFields = supplier ? ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"] :
@@ -727,6 +730,86 @@ this.gfnResponsiveModal = function(supplier) {
   var desktopFooter = Math.max(lastFieldTop + 54, height - 65);
   this.gfnResponsiveBounds("btnCancel", width - 233, desktopFooter, 94, 40);
   this.gfnResponsiveBounds("btnSave", width - 130, desktopFooter, 98, 40);
+};
+this.gfnSetImagePreview = function(source) {
+  if (!this.imgPreview) return;
+  var hasImage = !!source;
+  this.imgPreview.set_image(hasImage ? source : "");
+  this.imgPreview.set_visible(hasImage);
+  if (this.staImageGlyph) this.staImageGlyph.set_visible(!hasImage);
+};
+this.gfnPreviewSelectedImage = function(upload, event) {
+  this._imagePreviewRequest = (this._imagePreviewRequest || 0) + 1;
+  var request = this._imagePreviewRequest;
+  this.gfnSetImagePreview("");
+  var item = upload && upload._getItem && upload._getItem(event && event.index >= 0 ? event.index : 0);
+  var file = item && item._files && item._files[0];
+  if (!file || typeof FileReader === "undefined") return;
+  if (file.type && file.type.indexOf("image/") !== 0) return;
+  var form = this;
+  var reader = new FileReader();
+  reader.onload = function() {
+    if (form._imagePreviewRequest === request && typeof reader.result === "string" &&
+        reader.result.indexOf("data:image/") === 0) form.gfnSetImagePreview(reader.result);
+  };
+  reader.readAsDataURL(file);
+};
+this.gfnUploadImage = function(upload) {
+  var form = this;
+  var token = nexacro.getApplication().sessionToken;
+  if (!token) {
+    this.onImageUploadError(upload, { errormsg: "Your session has expired. Sign in again." });
+    return;
+  }
+  if (nexacro._Browser === "Runtime") {
+    try {
+      if (!upload.upload("api::uploads/image?sessionToken=" + encodeURIComponent(token))) {
+        this.onImageUploadError(upload, { errormsg: "Choose an image file first." });
+      }
+    } catch (error) {
+      this.onImageUploadError(upload, { errormsg: error.message || "The image could not be uploaded." });
+    }
+    return;
+  }
+  var item = upload._getItem && upload._getItem(0);
+  var file = item && item._files && item._files[0];
+  if (!file) {
+    this.onImageUploadError(upload, { errormsg: "Choose an image file first." });
+    return;
+  }
+  var body, url, request;
+  try {
+    body = new FormData();
+    body.append("sessionToken", token);
+    body.append("image", file, file.name);
+    url = nexacro._getServiceLocation("api::uploads/image", null, null, false, true);
+    request = fetch(url, { method: "POST", body: body });
+  } catch (error) {
+    this.onImageUploadError(upload, { errormsg: error.message || "The image could not be uploaded." });
+    return;
+  }
+  request.then(function(response) {
+    if (!response.ok) throw new Error("Image upload failed (HTTP " + response.status + ").");
+    return response.json();
+  }).then(function(data) {
+    var parameters = data && data.Parameters || [];
+    var errorCode = 0, errorMessage = "The image could not be uploaded.";
+    for (var i = 0; i < parameters.length; i++) {
+      if (parameters[i].id === "ErrorCode") errorCode = Number(parameters[i].value);
+      if (parameters[i].id === "ErrorMsg") errorMessage = parameters[i].value;
+    }
+    if (errorCode < 0) throw new Error(errorMessage);
+    var datasets = data && data.Datasets || [];
+    for (var j = 0; j < datasets.length; j++) {
+      if (datasets[j].id === "dsUpload" && datasets[j].Rows && datasets[j].Rows.length) {
+        var imageUrl = datasets[j].Rows[0].ImageUrl;
+        if (imageUrl) return form.onImageUploaded(imageUrl);
+      }
+    }
+    throw new Error("The image upload returned no image URL.");
+  }).catch(function(error) {
+    form.onImageUploadError(upload, { errormsg: error.message || "The image could not be uploaded." });
+  });
 };
 /**
  * Download a protected file through a Nexacro FileDownTransfer.
@@ -882,7 +965,7 @@ this.onSignupDatasetChanged = function(obj, e) {
 
 INVENTORY_SCRIPT = r"""
 this.page = 0;
-this.pageSize = 10;
+this.pageSize = 5;
 this.searchText = "";
 this.statusFilter = "";
 this.onLoad = function() {
@@ -920,6 +1003,8 @@ this.refreshPageLabel = function() {
   var end = this.page * this.pageSize + count;
   this.staPage.set_text(this.getOffsetWidth() < 760 ? start + "–" + end + " / " + total :
     "Showing " + start + "–" + end + " of " + total + " products");
+  this.btnPrev.set_enable(this.page > 0);
+  this.btnNext.set_enable((this.page + 1) * this.pageSize < total);
 };
 this.onProductsChanged = function(obj, e) {
   if (e.reason === nexacro.Dataset.REASON_ASSIGN || e.reason === nexacro.Dataset.REASON_APPEND ||
@@ -1061,6 +1146,7 @@ this.onDownload = function() {
 PRODUCT_FORM_SCRIPT = r"""
 this.isEditing = false;
 this.imageUploaded = false;
+this.imageUploading = false;
 this.onLoad = function() {
   var app = nexacro.getApplication();
   var ownerFrame = this.getOwnerFrame();
@@ -1103,8 +1189,12 @@ this.onProductCodesLoaded = function(serviceId, errorCode, errorMessage) {
 };
 this.onEditProductLoaded = function(serviceId, errorCode, errorMessage) {
   if (errorCode < 0 || !this.dsProduct.rowcount) return this.gfnHandleApiError(errorCode, errorMessage);
+  this.gfnSetImagePreview(this.dsProduct.getColumn(0, "ImageUrl"));
 };
-this.onImageChanged = function() { this.imageUploaded = false; };
+this.onImageChanged = function(obj, event) {
+  this.imageUploaded = false;
+  this.gfnPreviewSelectedImage(obj, event);
+};
 this.onSave = function() {
   var row = this.dsProduct.rowposition < 0 ? 0 : this.dsProduct.rowposition;
   var fields = ["ProductName", "ProductID", "Category", "BuyingPrice", "Quantity", "Unit", "ExpiryDate", "Threshold"];
@@ -1117,10 +1207,10 @@ this.onSave = function() {
     return this.gfnMessage("Price, quantity and threshold must be non-negative numbers.");
   }
   if (!this.gfnDate(this.dsProduct.getColumn(row, "ExpiryDate"))) return this.gfnMessage("Expiry date must be YYYY-MM-DD.");
+  if (this.imageUploading) return;
   if (this.uplImage.getItemCount(true) > 0 && !this.imageUploaded) {
-    var token = nexacro.getApplication().sessionToken;
-    if (!token) return this.gfnHandleApiError(-1, "Your session has expired. Sign in again.");
-    this.uplImage.upload("api::uploads/image?sessionToken=" + token);
+    this.imageUploading = true;
+    this.gfnUploadImage(this.uplImage);
     return;
   }
   this.submitProduct();
@@ -1130,15 +1220,20 @@ this.onImageUploadSuccess = function(obj, e) {
   var result = null;
   if (uploaded && uploaded.length) result = uploaded[0];
   else if (uploaded && uploaded.getCount && uploaded.getCount() > 0) result = uploaded.getItem(0);
-  if (!result || !result.rowcount) return this.gfnMessage("The image upload returned no image URL.");
+  if (!result || !result.rowcount) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
   var url = result.getColumn(0, "ImageUrl");
-  if (this.gfnEmpty(url)) return this.gfnMessage("The image upload returned no image URL.");
+  if (this.gfnEmpty(url)) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
+  this.onImageUploaded(url);
+};
+this.onImageUploaded = function(url) {
+  this.imageUploading = false;
   var row = this.dsProduct.rowposition < 0 ? 0 : this.dsProduct.rowposition;
   this.dsProduct.setColumn(row, "ImageUrl", url);
   this.imageUploaded = true;
   this.submitProduct();
 };
 this.onImageUploadError = function(obj, e) {
+  this.imageUploading = false;
   this.gfnMessage(e && e.errormsg ? e.errormsg : "The image could not be uploaded.");
 };
 this.submitProduct = function() {
@@ -1163,6 +1258,7 @@ this.onProductDatasetChanged = function(obj, e) {
 
 SUPPLIER_FORM_SCRIPT = r"""
 this.imageUploaded = false;
+this.imageUploading = false;
 this.onLoad = function() {
   this.onResponsiveSize();
   this.gfnBindRecord(this.dsSupplier, {
@@ -1189,7 +1285,10 @@ this.onSupplierCodesLoaded = function(serviceId, errorCode, errorMessage) {
     }
   }
 };
-this.onImageChanged = function() { this.imageUploaded = false; };
+this.onImageChanged = function(obj, event) {
+  this.imageUploaded = false;
+  this.gfnPreviewSelectedImage(obj, event);
+};
 this.onSave = function() {
   var row = this.dsSupplier.rowposition < 0 ? 0 : this.dsSupplier.rowposition;
   var fields = ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"];
@@ -1206,10 +1305,10 @@ this.onSave = function() {
       this.dsSupplier.getColumn(row, "Type") !== "Not taking return") {
     return this.gfnMessage("Choose a valid supplier type.");
   }
+  if (this.imageUploading) return;
   if (this.uplImage.getItemCount(true) > 0 && !this.imageUploaded) {
-    var token = nexacro.getApplication().sessionToken;
-    if (!token) return this.gfnHandleApiError(-1, "Your session has expired. Sign in again.");
-    this.uplImage.upload("api::uploads/image?sessionToken=" + token);
+    this.imageUploading = true;
+    this.gfnUploadImage(this.uplImage);
     return;
   }
   this.submitSupplier();
@@ -1219,15 +1318,20 @@ this.onImageUploadSuccess = function(obj, e) {
   var result = null;
   if (uploaded && uploaded.length) result = uploaded[0];
   else if (uploaded && uploaded.getCount && uploaded.getCount() > 0) result = uploaded.getItem(0);
-  if (!result || !result.rowcount) return this.gfnMessage("The image upload returned no image URL.");
+  if (!result || !result.rowcount) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
   var url = result.getColumn(0, "ImageUrl");
-  if (this.gfnEmpty(url)) return this.gfnMessage("The image upload returned no image URL.");
+  if (this.gfnEmpty(url)) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
+  this.onImageUploaded(url);
+};
+this.onImageUploaded = function(url) {
+  this.imageUploading = false;
   var row = this.dsSupplier.rowposition < 0 ? 0 : this.dsSupplier.rowposition;
   this.dsSupplier.setColumn(row, "ImageUrl", url);
   this.imageUploaded = true;
   this.submitSupplier();
 };
 this.onImageUploadError = function(obj, e) {
+  this.imageUploading = false;
   this.gfnMessage(e && e.errormsg ? e.errormsg : "The image could not be uploaded.");
 };
 this.submitSupplier = function() {

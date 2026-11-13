@@ -4,6 +4,7 @@
 <Static id="staFormTitle" left="28" top="23" width="440" height="40" text="New Supplier" cssclass="popupTitle"/>
 <Static id="staImageBox" left="140" top="70" width="90" height="84" text="" cssclass="uploadBox"/>
 <Static id="staImageGlyph" left="162" top="83" width="48" height="55" text="+" cssclass="uploadGlyph"/>
+<ImageViewer id="imgPreview" left="140" top="70" width="90" height="84" cssclass="uploadPreview" stretch="fixaspectratio" visible="false"/>
 <Static id="staImage" left="240" top="82" width="220" height="50" text="Drag image here
 or Browse image" cssclass="uploadHint"/>
 <FileUpload id="uplImage" left="240" top="126" width="218" height="30" cssclass="uploadPicker" onitemchanged="onImageChanged" onsuccess="onImageUploadSuccess" onerror="onImageUploadError"/>
@@ -25,6 +26,7 @@ or Browse image" cssclass="uploadHint"/>
 <Objects><Dataset id="dsCategory"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Electronics</Col><Col id="Label">Electronics</Col></Row><Row><Col id="Code">Office</Col><Col id="Label">Office</Col></Row><Row><Col id="Code">Stationery</Col><Col id="Label">Stationery</Col></Row><Row><Col id="Code">Other</Col><Col id="Label">Other</Col></Row></Rows></Dataset><Dataset id="dsType"><ColumnInfo><Column id="Code" type="STRING" size="64"/><Column id="Label" type="STRING" size="64"/></ColumnInfo><Rows><Row><Col id="Code">Taking return</Col><Col id="Label">Taking return</Col></Row><Row><Col id="Code">Not taking return</Col><Col id="Label">Not taking return</Col></Row></Rows></Dataset><Dataset id="dsSupplier" onrowsetchanged="onSupplierDatasetChanged"><ColumnInfo><Column id="SupplierID" type="STRING" size="1024"/><Column id="SupplierName" type="STRING" size="1024"/><Column id="Product" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Contact" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="OnTheWay" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsSupplierResult"><ColumnInfo><Column id="SupplierID" type="STRING" size="1024"/><Column id="SupplierName" type="STRING" size="1024"/><Column id="Product" type="STRING" size="1024"/><Column id="Category" type="STRING" size="1024"/><Column id="BuyingPrice" type="STRING" size="1024"/><Column id="Contact" type="STRING" size="1024"/><Column id="Email" type="STRING" size="1024"/><Column id="Type" type="STRING" size="1024"/><Column id="OnTheWay" type="STRING" size="1024"/><Column id="ImageUrl" type="STRING" size="1024"/></ColumnInfo></Dataset><Dataset id="dsCodes"><ColumnInfo><Column id="CodeType" type="STRING" size="1024"/><Column id="Code" type="STRING" size="1024"/><Column id="Label" type="STRING" size="1024"/></ColumnInfo></Dataset></Objects>
 <Script type="xscript5.1"><![CDATA[include "lib::InventoryCommon.xjs";
 this.imageUploaded = false;
+this.imageUploading = false;
 this.onLoad = function() {
   this.onResponsiveSize();
   this.gfnBindRecord(this.dsSupplier, {
@@ -51,7 +53,10 @@ this.onSupplierCodesLoaded = function(serviceId, errorCode, errorMessage) {
     }
   }
 };
-this.onImageChanged = function() { this.imageUploaded = false; };
+this.onImageChanged = function(obj, event) {
+  this.imageUploaded = false;
+  this.gfnPreviewSelectedImage(obj, event);
+};
 this.onSave = function() {
   var row = this.dsSupplier.rowposition < 0 ? 0 : this.dsSupplier.rowposition;
   var fields = ["SupplierName", "Product", "Category", "BuyingPrice", "Contact", "Type"];
@@ -68,10 +73,10 @@ this.onSave = function() {
       this.dsSupplier.getColumn(row, "Type") !== "Not taking return") {
     return this.gfnMessage("Choose a valid supplier type.");
   }
+  if (this.imageUploading) return;
   if (this.uplImage.getItemCount(true) > 0 && !this.imageUploaded) {
-    var token = nexacro.getApplication().sessionToken;
-    if (!token) return this.gfnHandleApiError(-1, "Your session has expired. Sign in again.");
-    this.uplImage.upload("api::uploads/image?sessionToken=" + token);
+    this.imageUploading = true;
+    this.gfnUploadImage(this.uplImage);
     return;
   }
   this.submitSupplier();
@@ -81,15 +86,20 @@ this.onImageUploadSuccess = function(obj, e) {
   var result = null;
   if (uploaded && uploaded.length) result = uploaded[0];
   else if (uploaded && uploaded.getCount && uploaded.getCount() > 0) result = uploaded.getItem(0);
-  if (!result || !result.rowcount) return this.gfnMessage("The image upload returned no image URL.");
+  if (!result || !result.rowcount) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
   var url = result.getColumn(0, "ImageUrl");
-  if (this.gfnEmpty(url)) return this.gfnMessage("The image upload returned no image URL.");
+  if (this.gfnEmpty(url)) return this.onImageUploadError(obj, { errormsg: "The image upload returned no image URL." });
+  this.onImageUploaded(url);
+};
+this.onImageUploaded = function(url) {
+  this.imageUploading = false;
   var row = this.dsSupplier.rowposition < 0 ? 0 : this.dsSupplier.rowposition;
   this.dsSupplier.setColumn(row, "ImageUrl", url);
   this.imageUploaded = true;
   this.submitSupplier();
 };
 this.onImageUploadError = function(obj, e) {
+  this.imageUploading = false;
   this.gfnMessage(e && e.errormsg ? e.errormsg : "The image could not be uploaded.");
 };
 this.submitSupplier = function() {

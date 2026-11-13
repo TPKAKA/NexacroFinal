@@ -37,6 +37,7 @@
 .Edit.modalField, .Combo.modalField { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:5px; -nexa-padding:0px 10px; color:#303943; font:13px "Segoe UI"; }
 .Static.uploadBox { background:#FFFFFF; -nexa-border:1px dashed #DDE2E8; border-radius:6px; }
 .Static.uploadGlyph { color:#A2ADB9; -nexa-text-align:center; font:36px "Segoe UI"; }
+.ImageViewer.uploadPreview { background:#FFFFFF; -nexa-border:1px solid #DDE2E8; border-radius:6px; }
 .Static.uploadHint { color:#9CA4AF; font:12px "Segoe UI"; }
 .FileUpload.uploadPicker { color:#1E6FD9; font:12px "Segoe UI"; }
 .Static.detailBody { color:#626C78; font:14px "Segoe UI"; }
